@@ -91,10 +91,10 @@ bool match_pillars(unsigned int seed,const int *pillar_liste) {
     for (int i = 0; i < 10; i++) {
         liste[i] = i;
     }
-    int *shuffled_liste = shuffling(seed, liste);
+    shuffling(seed, liste);
     int i = 0;
     while (i < 10 && flag) {
-        if ((76 + shuffled_liste[i] * 3) != pillar_liste[i]) {
+        if ((76 + liste[i] * 3) != pillar_liste[i]) {
             flag = false;
         }
         i++;
@@ -204,14 +204,19 @@ unsigned long long pieces_together(){
 void test_pillars(){
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    int liste[10] = {79, 88, 97, 85, 103, 94, 76, 91, 82, 100};
-    printf("%d\n", find_pillar_seed(liste));
+    unsigned int seed=1000;
+    int liste[10];
+    for (int i = 0; i < 10; i++) {
+        liste[i] = i*3+76;
+    }
+    shuffling(seed,liste);
+    printf("%d is the seed found whereas the correct one was: %d, i guess i can say congrats!\n", find_pillar_seed(liste),seed);
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
     std::cout << "It took me " << time_span.count() << " seconds.";
     std::cout << std::endl;
 }
 int main() {
-
+    test_pillars();
     return 0;
 }
