@@ -5,8 +5,10 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <thread>
 
 using namespace std;
+
 class Random {
 private:
     unsigned long long seed;
@@ -64,12 +66,13 @@ public:
     char typeStruct;
 };
 
-class Globals{
+class Globals {
 public:
-    explicit Globals( const int *pillars_array,vector<Structure> structures_array){
-        this->pillars_array=pillars_array;
-        this->structures_array=move(structures_array);
+    explicit Globals(const int *pillars_array, vector<Structure> structures_array) {
+        this->pillars_array = pillars_array;
+        this->structures_array = move(structures_array);
     }
+
     const int *pillars_array;
     vector<Structure> structures_array;
 };
@@ -85,7 +88,7 @@ int *shuffling(unsigned int seed, int *liste) {
     return liste;
 }
 
-bool match_pillars(unsigned int seed,const int *pillar_liste) {
+bool match_pillars(unsigned int seed, const int *pillar_liste) {
     bool flag = true;
     int liste[10];
     for (int i = 0; i < 10; i++) {
@@ -139,84 +142,163 @@ bool can_it_be_there(unsigned long long currentSeed, int index, vector<Structure
         k = (r.nextInt(60) + r.nextInt(60));
         m = (r.nextInt(60) + r.nextInt(60));
     }
-    if (el.chunkX % el.modulus == k && m == el.chunkZ % el.modulus){
-        if (index>3){
-            printf("Good seed: %llu \n",currentSeed);
+    if (el.chunkX % el.modulus == k && m == el.chunkZ % el.modulus) {
+        if (index > 3) {
+            printf("Good seed: %llu \n", currentSeed);
         }
-        if (index==arrayStruct.size()-1){
+        if (index == arrayStruct.size() - 1) {
             return true;
         }
-        return can_it_be_there(currentSeed,index+1,arrayStruct);
+        return can_it_be_there(currentSeed, index + 1, arrayStruct);
     }
     return false;
 }
 
-unsigned long long test_them_all(unsigned int pillar_seed, const vector<Structure>& arrayStruct){
+unsigned long long test_them_all(unsigned int pillar_seed, const vector<Structure> &arrayStruct) {
     //TODO threading here
-    for (unsigned long i=0;i<UINT_FAST32_MAX;i++){
+    using namespace std::chrono;
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    for (unsigned long i = 0; i < UINT_FAST32_MAX; i++) {
         unsigned long long currentSeed = time_machine(i, pillar_seed);
-        if (can_it_be_there(currentSeed,0,arrayStruct)){
+        if (can_it_be_there(currentSeed, 0, arrayStruct)) {
             return currentSeed;
+        }
+        if ((i%(1LLU<<25u))==0){
+            cout<<"We are at: "<<(double)(i)/(double)(UINT_FAST32_MAX)<<endl;
+            high_resolution_clock::time_point t2 = high_resolution_clock::now();
+            duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+            std::cout << "It took me " << time_span.count() << " seconds.";
+            std::cout << std::endl;
         }
     }
     return UINT_FAST64_MAX;
 }
 
-Globals parse_file(){
+unsigned long long structure_seed_single(unsigned long *a, unsigned long n_iter,int thread_id,unsigned int pillar_seed, const vector<Structure> &arrayStruct){
+    using namespace std::chrono;
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    for (unsigned long i=0;i<n_iter;i++){
+        unsigned long long currentSeed=time_machine(i+a[thread_id], pillar_seed);
+        if (can_it_be_there(currentSeed, 0, arrayStruct)) {
+            printf("Seed found: %llu\n",currentSeed);
+            return currentSeed;
+        }
+        if (((i+a[thread_id])%(1LLU<<26u))==0){
+            cout<<"We are at: "<<(double)(i+a[thread_id])/(double)(UINT_FAST32_MAX)<<endl;
+            high_resolution_clock::time_point t2 = high_resolution_clock::now();
+            duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+            std::cout << "It took me " << time_span.count() << " seconds."<<endl;
+        }
+    }
+}
 
-    string line,field;
+unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Structure> &arrayStruct){
+    static const int num_of_threads = 8;
+    std::thread threads[num_of_threads];
+    unsigned long a[num_of_threads];
+    unsigned long iota=UINT_FAST32_MAX/num_of_threads;
+    for (int i=0;i<num_of_threads;i++){
+        a[i]=iota*i;
+    }
+    for (int i = 0; i < num_of_threads; ++i) {
+        threads[i] = std::thread(structure_seed_single,a,iota,i,pillar_seed,arrayStruct);
+    }
+    for (int i = 0; i < num_of_threads; ++i) {
+        threads[i].join();
+    }
+    for (unsigned long i=(num_of_threads-1)*iota+iota;i < UINT_FAST32_MAX;i++){
+        unsigned long long currentSeed=time_machine(i, pillar_seed);
+        if (can_it_be_there(currentSeed, 0, arrayStruct)) {
+            printf("Seed found: %llu\n",currentSeed);
+            return currentSeed;
+        }
+    }
+    return 0;
+}
+
+
+
+Globals parse_file() {
+
+    string line, field;
     ifstream in("data.txt");
-
     //get the pillars array
-    getline(in,line);
+    getline(in, line);
     stringstream pilars(line);
     int static pillar_array[10];
-    int i=0;
-    while (i<10 && getline(pilars,field,',')){
-        pillar_array[i]=stoi(field);
+    int i = 0;
+    while (i < 10 && getline(pilars, field, ',')) {
+        pillar_array[i] = stoi(field);
         i++;
     }
 
     //get the structures array
-    vector <Structure> data;
-    while (getline(in,line)){
+    vector<Structure> data;
+    long long salt;
+    int modulus;
+    long long incompleteRand;
+    char typeStruct;
+    long long chunkX, chunkZ;
+    while (getline(in, line)) {
         stringstream ss(line);
-        getline(ss,field,',');
-        long long chunkX=stoll(field);
-        getline(ss,field,',');
-        long long chunkZ=stoll(field);
-        getline(ss,field,',');
-        long long incompleteRand=stoll(field);
-        getline(ss,field,',');
-        int modulus=stoi(field);
-        getline(ss,field,',');
-        char typeStruct=field[0];
-        data.emplace_back(Structure(chunkX,chunkZ,incompleteRand,modulus,typeStruct));
+
+        getline(ss, field, ',');
+        salt = stoll(field);
+        getline(ss, field, ',');
+        modulus = stoi(field);
+        getline(ss, field, ',');
+        typeStruct = field[0];
+        getline(ss, field, ',');
+        chunkX = stoll(field);
+        getline(ss, field, ',');
+        chunkZ = stoll(field);
+        if (chunkX < 0) {
+            chunkX -= modulus - 1;
+        }
+        if (chunkZ < 0) {
+            chunkZ -= modulus - 1;
+        }
+        incompleteRand = (chunkX / modulus * 341873128712LL + chunkZ / modulus * 132897987541LL + salt);
+        data.emplace_back(Structure(chunkX, chunkZ, incompleteRand, modulus, typeStruct));
     }
-    return Globals(pillar_array,data);
+    return Globals(pillar_array, data);
 }
 
-unsigned long long pieces_together(){
-    const Globals global_data=parse_file();
-    unsigned int pillar_seed=find_pillar_seed(global_data.pillars_array);
-    return test_them_all(pillar_seed,global_data.structures_array);
+unsigned long long pieces_together() {
+    const Globals global_data = parse_file();
+    unsigned int pillar_seed = find_pillar_seed(global_data.pillars_array);
+    printf("Pillar seed was found and it is: %d \n",pillar_seed);
+    unsigned long long final_seed=threaded_structure(pillar_seed, global_data.structures_array);
+    return final_seed;
 }
-void test_pillars(){
+
+void test_pillars() {
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    unsigned int seed=1000;
+    unsigned int seed = 1000;
     int liste[10];
     for (int i = 0; i < 10; i++) {
-        liste[i] = i*3+76;
+        liste[i] = i * 3 + 76;
     }
-    shuffling(seed,liste);
-    printf("%d is the seed found whereas the correct one was: %d, i guess i can say congrats!\n", find_pillar_seed(liste),seed);
+    shuffling(seed, liste);
+    printf("%d is the seed found whereas the correct one was: %d, i guess i can say congrats!\n",
+           find_pillar_seed(liste), seed);
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
     std::cout << "It took me " << time_span.count() << " seconds.";
     std::cout << std::endl;
 }
+
 int main() {
-    test_pillars();
+    // test_pillars();
+
+    //printf("%llu",pieces_together());
+    pieces_together();
     return 0;
 }
+
+
+/*DATA FORMAT
+ * First line will be 10 numbers between 76 and 103 (inclusive) by step of 3 all separated with commas
+ * Next n lines will be structures with first the unique salt, then the modulus of the structure then the type of structure
+ * then the chunkX and the chunkZ all separated by commas.*/
