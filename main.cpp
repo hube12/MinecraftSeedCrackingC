@@ -141,10 +141,11 @@ bool can_it_be_there(unsigned long long currentSeed, int index, vector<Structure
         k = (r.nextInt(27) + r.nextInt(27)) / 2;
         m = (r.nextInt(27) + r.nextInt(27)) / 2;
     } else {
-        k = (r.nextInt(60) + r.nextInt(60));
-        m = (r.nextInt(60) + r.nextInt(60));
+        k = (r.nextInt(60) + r.nextInt(60)) / 2;
+        m = (r.nextInt(60) + r.nextInt(60)) / 2;
     }
-    if (el.chunkX % el.modulus == k && m == el.chunkZ % el.modulus) {
+    if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k &&
+        m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus)) {
         if (index > 3) {
             printf("Good seed: %llu \n", currentSeed);
         }
@@ -186,7 +187,7 @@ structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, uns
             printf("Seed found: %llu\n", currentSeed);
             return currentSeed;
         }
-        if (((i) % (n_iter / 10)) == 0) {
+        if ((i % (n_iter / 10)) == 0) {
             cout << "We are at: " << (double) (i + a[thread_id]) / (double) (maxi) << endl;
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
@@ -194,6 +195,7 @@ structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, uns
         }
     }
 }
+
 
 vector<Structure> *array_of_struct(int num_of_threads, vector<Structure> arrayStruct, vector<Structure> *a) {
 
@@ -206,9 +208,10 @@ vector<Structure> *array_of_struct(int num_of_threads, vector<Structure> arraySt
     }
     return a;
 }
-unsigned long long multiprocess_structure(unsigned int pillar_seed, const vector<Structure> arrayStruct){
-    pid_t pid1=fork();
-    pid_t pid2=fork();
+
+unsigned long long multiprocess_structure(unsigned int pillar_seed, const vector<Structure> arrayStruct) {
+    pid_t pid1 = fork();
+    pid_t pid2 = fork();
 
     static const int num_of_process = 4;
     unsigned long a[num_of_process];
@@ -218,8 +221,12 @@ unsigned long long multiprocess_structure(unsigned int pillar_seed, const vector
     for (int i = 0; i < num_of_process; i++) {
         a[i] = iota * i;
     }
-    structure_seed_single( a, iota, (pid1==0 && pid2==0)?0:((pid1==0 && pid2>0)?1:((pid1>0 && pid2==0)?2:3)), pillar_seed, a_struct);
+    structure_seed_single(a, iota,
+                          (pid1 == 0 && pid2 == 0) ? 0 : ((pid1 == 0 && pid2 > 0) ? 1 : ((pid1 > 0 && pid2 == 0) ? 2
+                                                                                                                 : 3)),
+                          pillar_seed, a_struct);
 }
+
 unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Structure> arrayStruct) {
     static const int num_of_threads = 8;
     std::thread threads[num_of_threads];
@@ -281,13 +288,8 @@ Globals parse_file() {
         chunkX = stoll(field);
         getline(ss, field, ',');
         chunkZ = stoll(field);
-        if (chunkX < 0) {
-            chunkX -= modulus - 1;
-        }
-        if (chunkZ < 0) {
-            chunkZ -= modulus - 1;
-        }
-        incompleteRand = (chunkX / modulus * 341873128712LL + chunkZ / modulus * 132897987541LL + salt);
+        incompleteRand = (((chunkX < 0) ? chunkX - (modulus - 1) : chunkX) / modulus * 341873128712LL +
+                          ((chunkZ < 0) ? chunkZ - (modulus - 1) : chunkZ) / modulus * 132897987541LL + salt);
         data.emplace_back(Structure(chunkX, chunkZ, incompleteRand, modulus, typeStruct));
     }
     return Globals(pillar_array, data);
@@ -299,6 +301,18 @@ unsigned long long pieces_together() {
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
     unsigned long long final_seed = multiprocess_structure(pillar_seed, global_data.structures_array);
     return final_seed;
+}
+
+void test_structure() {
+    const Globals global_data = parse_file();
+    unsigned int pillar_seed = find_pillar_seed(global_data.pillars_array);
+    printf("Pillar seed was found and it is: %d \n", pillar_seed);
+    unsigned long long seed = 123;
+    if (can_it_be_there(seed, 0, global_data.structures_array)) {
+        cout << "Well done we found the right seed" << endl;
+    } else {
+        cout << "Come on" << endl;
+    }
 }
 
 void test_pillars() {
@@ -322,7 +336,8 @@ int main() {
     // test_pillars();
 
     //printf("%llu",pieces_together());
-    pieces_together();
+    //pieces_together();
+    test_structure();
     return 0;
 }
 
