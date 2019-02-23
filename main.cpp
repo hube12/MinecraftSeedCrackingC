@@ -6,7 +6,9 @@
 #include <vector>
 #include <sstream>
 #include <thread>
+#include <unistd.h>
 
+#define maxi (unsigned long)((1LLU<<32u)-1)
 using namespace std;
 
 class Random {
@@ -155,16 +157,15 @@ bool can_it_be_there(unsigned long long currentSeed, int index, vector<Structure
 }
 
 unsigned long long test_them_all(unsigned int pillar_seed, const vector<Structure> &arrayStruct) {
-    //TODO threading here
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    for (unsigned long i = 0; i < UINT_FAST32_MAX; i++) {
+    for (unsigned long i = 0; i < maxi; i++) {
         unsigned long long currentSeed = time_machine(i, pillar_seed);
         if (can_it_be_there(currentSeed, 0, arrayStruct)) {
             return currentSeed;
         }
-        if ((i%(1LLU<<25u))==0){
-            cout<<"We are at: "<<(double)(i)/(double)(UINT_FAST32_MAX)<<endl;
+        if ((i % (1LLU << 28u)) == 0) {
+            cout << "We are at: " << (double) (i) / (double) (maxi) << " " << i << " " << maxi << endl;
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
             std::cout << "It took me " << time_span.count() << " seconds.";
@@ -174,48 +175,76 @@ unsigned long long test_them_all(unsigned int pillar_seed, const vector<Structur
     return UINT_FAST64_MAX;
 }
 
-unsigned long long structure_seed_single(unsigned long *a, unsigned long n_iter,int thread_id,unsigned int pillar_seed, const vector<Structure> &arrayStruct){
+unsigned long long
+structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, unsigned int pillar_seed,
+                      const vector<Structure> *arrayStruct) {
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    for (unsigned long i=0;i<n_iter;i++){
-        unsigned long long currentSeed=time_machine(i+a[thread_id], pillar_seed);
-        if (can_it_be_there(currentSeed, 0, arrayStruct)) {
-            printf("Seed found: %llu\n",currentSeed);
+    for (unsigned long i = 0; i < n_iter; i++) {
+        unsigned long long currentSeed = time_machine(i + a[thread_id], pillar_seed);
+        if (can_it_be_there(currentSeed, 0, arrayStruct[thread_id])) {
+            printf("Seed found: %llu\n", currentSeed);
             return currentSeed;
         }
-        if (((i+a[thread_id])%(1LLU<<26u))==0){
-            cout<<"We are at: "<<(double)(i+a[thread_id])/(double)(UINT_FAST32_MAX)<<endl;
+        if (((i) % (n_iter / 10)) == 0) {
+            cout << "We are at: " << (double) (i + a[thread_id]) / (double) (maxi) << endl;
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-            std::cout << "It took me " << time_span.count() << " seconds."<<endl;
+            std::cout << "It took me " << time_span.count() << " seconds." << endl;
         }
     }
 }
 
-unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Structure> &arrayStruct){
+vector<Structure> *array_of_struct(int num_of_threads, vector<Structure> arrayStruct, vector<Structure> *a) {
+
+    for (int i = 0; i < num_of_threads; i++) {
+        for (int j = 0; j < arrayStruct.size(); j++) {
+            Structure el = arrayStruct[j];
+            Structure s(el.chunkX, el.chunkZ, el.incompleteRand, el.modulus, el.typeStruct);
+            a[i].push_back(s);
+        }
+    }
+    return a;
+}
+unsigned long long multiprocess_structure(unsigned int pillar_seed, const vector<Structure> arrayStruct){
+    pid_t pid1=fork();
+    pid_t pid2=fork();
+
+    static const int num_of_process = 4;
+    unsigned long a[num_of_process];
+    unsigned long iota = maxi / num_of_process;
+    vector<Structure> a_struct[num_of_process];
+    array_of_struct(num_of_process, arrayStruct, a_struct);
+    for (int i = 0; i < num_of_process; i++) {
+        a[i] = iota * i;
+    }
+    structure_seed_single( a, iota, (pid1==0 && pid2==0)?0:((pid1==0 && pid2>0)?1:((pid1>0 && pid2==0)?2:3)), pillar_seed, a_struct);
+}
+unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Structure> arrayStruct) {
     static const int num_of_threads = 8;
     std::thread threads[num_of_threads];
     unsigned long a[num_of_threads];
-    unsigned long iota=UINT_FAST32_MAX/num_of_threads;
-    for (int i=0;i<num_of_threads;i++){
-        a[i]=iota*i;
+    unsigned long iota = maxi / num_of_threads;
+    vector<Structure> a_struct[num_of_threads];
+    array_of_struct(num_of_threads, arrayStruct, a_struct);
+    for (int i = 0; i < num_of_threads; i++) {
+        a[i] = iota * i;
     }
     for (int i = 0; i < num_of_threads; ++i) {
-        threads[i] = std::thread(structure_seed_single,a,iota,i,pillar_seed,arrayStruct);
+        threads[i] = std::thread(structure_seed_single, a, iota, i, pillar_seed, a_struct);
     }
     for (int i = 0; i < num_of_threads; ++i) {
         threads[i].join();
     }
-    for (unsigned long i=(num_of_threads-1)*iota+iota;i < UINT_FAST32_MAX;i++){
-        unsigned long long currentSeed=time_machine(i, pillar_seed);
+    for (unsigned long i = (num_of_threads - 1) * iota + iota; i < maxi; i++) {
+        unsigned long long currentSeed = time_machine(i, pillar_seed);
         if (can_it_be_there(currentSeed, 0, arrayStruct)) {
-            printf("Seed found: %llu\n",currentSeed);
+            printf("Seed found: %llu\n", currentSeed);
             return currentSeed;
         }
     }
     return 0;
 }
-
 
 
 Globals parse_file() {
@@ -267,8 +296,8 @@ Globals parse_file() {
 unsigned long long pieces_together() {
     const Globals global_data = parse_file();
     unsigned int pillar_seed = find_pillar_seed(global_data.pillars_array);
-    printf("Pillar seed was found and it is: %d \n",pillar_seed);
-    unsigned long long final_seed=threaded_structure(pillar_seed, global_data.structures_array);
+    printf("Pillar seed was found and it is: %d \n", pillar_seed);
+    unsigned long long final_seed = multiprocess_structure(pillar_seed, global_data.structures_array);
     return final_seed;
 }
 
