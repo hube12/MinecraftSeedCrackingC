@@ -7,6 +7,9 @@
 #include <sstream>
 #include <thread>
 #include <unistd.h>
+#include <cmath>
+#include <cstring>
+#include <assert.h>
 
 #define maxi (unsigned long)((1LLU<<32u)-1)
 using namespace std;
@@ -68,13 +71,47 @@ public:
     char typeStruct;
 };
 
-class Globals {
+class Options {
 public:
-    explicit Globals(const int *pillars_array, vector<Structure> structures_array) {
-        this->pillars_array = pillars_array;
-        this->structures_array = move(structures_array);
+    Options(string version, int processes, int biome, int river) {
+        this->version = move(version);
+        this->processes = processes;
+        this->biome = biome;
+        this->river = river;
+    }
+    Options(){};
+    string version;
+    int processes;
+    int biome;
+    int river;
+};
+
+class Biome {
+public:
+    explicit Biome(int id, long long cx, long long cz) {
+        this->id = id;
+        this->cx = cx;
+        this->cz = cz;
     }
 
+    int id;
+    long long cx;
+    long long cz;
+};
+
+class Globals {
+public:
+    explicit Globals(const int *pillars_array, vector<Structure> structures_array,
+                     Options option,
+                     vector<Biome> biomes) {
+        this->pillars_array = pillars_array;
+        this->structures_array = move(structures_array);
+        this->biome = move(biomes);
+        this->option = move(option);
+    }
+
+    Options option;
+    vector<Biome> biome;
     const int *pillars_array;
     vector<Structure> structures_array;
 };
@@ -200,8 +237,7 @@ structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, uns
 vector<Structure> *array_of_struct(int num_of_threads, vector<Structure> arrayStruct, vector<Structure> *a) {
 
     for (int i = 0; i < num_of_threads; i++) {
-        for (int j = 0; j < arrayStruct.size(); j++) {
-            Structure el = arrayStruct[j];
+        for (Structure el :arrayStruct) {
             Structure s(el.chunkX, el.chunkZ, el.incompleteRand, el.modulus, el.typeStruct);
             a[i].push_back(s);
         }
@@ -209,11 +245,19 @@ vector<Structure> *array_of_struct(int num_of_threads, vector<Structure> arraySt
     return a;
 }
 
-unsigned long long multiprocess_structure(unsigned int pillar_seed, const vector<Structure> arrayStruct) {
+int return_id(vector<pid_t> &array) {
+    int retval = 0;
+    for (int i = 0; i < array.size(); i++) {
+        retval += (array[i] > 0 ? 1 : 0) * (int) pow(2, i);
+    }
+    return retval;
+}
+
+unsigned long long multiprocess_structure(unsigned int pillar_seed, const vector<Structure> &arrayStruct) {
     pid_t pid1 = fork();
     pid_t pid2 = fork();
-
-    static const int num_of_process = 4;
+    pid_t pid3 = fork();
+    static const int num_of_process = 8;
     unsigned long a[num_of_process];
     unsigned long iota = maxi / num_of_process;
     vector<Structure> a_struct[num_of_process];
@@ -221,15 +265,17 @@ unsigned long long multiprocess_structure(unsigned int pillar_seed, const vector
     for (int i = 0; i < num_of_process; i++) {
         a[i] = iota * i;
     }
-    structure_seed_single(a, iota,
-                          (pid1 == 0 && pid2 == 0) ? 0 : ((pid1 == 0 && pid2 > 0) ? 1 : ((pid1 > 0 && pid2 == 0) ? 2
-                                                                                                                 : 3)),
-                          pillar_seed, a_struct);
+    vector<pid_t> pids;
+    pids.push_back(pid1);
+    pids.push_back(pid2);
+    pids.push_back(pid3);
+    structure_seed_single(a, iota, return_id(pids), pillar_seed, a_struct);
 }
 
 unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Structure> &arrayStruct) {
     static const int num_of_threads = 8;
-    std::thread threads[num_of_threads];
+    cout << num_of_threads << endl;
+    thread threads[num_of_threads];
     unsigned long a[num_of_threads];
     unsigned long iota = maxi / num_of_threads;
     vector<Structure> a_struct[num_of_threads];
@@ -238,10 +284,10 @@ unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Str
         a[i] = iota * i;
     }
     for (int i = 0; i < num_of_threads; ++i) {
-        threads[i] = std::thread(structure_seed_single, a, iota, i, pillar_seed, a_struct);
+        threads[i] = thread(structure_seed_single, a, iota, i, pillar_seed, a_struct);
     }
-    for (int i = 0; i < num_of_threads; ++i) {
-        threads[i].join();
+    for (auto &t:threads) {
+        t.join();
     }
     for (unsigned long i = (num_of_threads - 1) * iota + iota; i < maxi; i++) {
         unsigned long long currentSeed = time_machine(i, pillar_seed);
@@ -255,9 +301,22 @@ unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Str
 
 
 Globals parse_file() {
-
     string line, field;
     ifstream in("data.txt");
+
+    //get the options
+    getline(in, line);
+    stringstream options(line);
+    getline(options, field, ',');
+    string version_number = field;
+    getline(options, field, ',');
+    int number_of_processes = stoi(field);
+    getline(options, field, ',');
+    int biome_size = stoi(field);
+    getline(options, field, ',');
+    int river_size = stoi(field);
+    Options options_obj(version_number, number_of_processes, biome_size, river_size);
+
     //get the pillars array
     getline(in, line);
     stringstream pilars(line);
@@ -270,29 +329,36 @@ Globals parse_file() {
 
     //get the structures array
     vector<Structure> data;
-    long long salt;
-    int modulus;
-    long long incompleteRand;
-    char typeStruct;
-    long long chunkX, chunkZ;
-    while (getline(in, line)) {
-        stringstream ss(line);
-
-        getline(ss, field, ',');
-        salt = stoll(field);
-        getline(ss, field, ',');
-        modulus = stoi(field);
-        getline(ss, field, ',');
-        typeStruct = field[0];
-        getline(ss, field, ',');
-        chunkX = stoll(field);
-        getline(ss, field, ',');
-        chunkZ = stoll(field);
-        incompleteRand = (((chunkX < 0) ? chunkX - (modulus - 1) : chunkX) / modulus * 341873128712LL +
-                          ((chunkZ < 0) ? chunkZ - (modulus - 1) : chunkZ) / modulus * 132897987541LL + salt);
+    string sep="--------------------------\r";
+    while (getline(in, line) && sep.compare(line)) {
+        stringstream structures(line);
+        getline(structures, field, ',');
+        long long salt = stoll(field);
+        getline(structures, field, ',');
+        int modulus = stoi(field);
+        getline(structures, field, ',');
+        char typeStruct = field[0];
+        getline(structures, field, ',');
+        long long chunkX = stoll(field);
+        getline(structures, field, ',');
+        long long chunkZ = stoll(field);
+        long long incompleteRand = (((chunkX < 0) ? chunkX - (modulus - 1) : chunkX) / modulus * 341873128712LL +
+                                    ((chunkZ < 0) ? chunkZ - (modulus - 1) : chunkZ) / modulus * 132897987541LL + salt);
         data.emplace_back(Structure(chunkX, chunkZ, incompleteRand, modulus, typeStruct));
     }
-    return Globals(pillar_array, data);
+    //get the biomes array
+    vector<Biome> biomes_obj;
+    while (getline(in, line)) {
+        stringstream biomes(line);
+        getline(biomes, field, ',');
+        int id = stoi(field);
+        getline(biomes, field, ',');
+        long long cx = stoll(field);
+        getline(biomes, field, ',');
+        long long cz = stoll(field);
+        biomes_obj.emplace_back(Biome(id, cx, cz));
+    }
+    return Globals(pillar_array, data, options_obj, biomes_obj);
 }
 
 unsigned long long pieces_together() {
@@ -301,6 +367,22 @@ unsigned long long pieces_together() {
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
     unsigned long long final_seed = multiprocess_structure(pillar_seed, global_data.structures_array);
     return final_seed;
+}
+void test_data(){
+    const Globals global_data = parse_file();
+    assert (global_data.pillars_array!= nullptr);
+    for (Biome el:global_data.biome){
+        assert(el.cz!=NAN);
+        assert(el.cx!=NAN);
+        assert(el.id!=NAN);
+    }
+    for (Structure s:global_data.structures_array){
+        assert(s.chunkX!=NAN);
+        assert(s.chunkZ!=NAN);
+        assert(s.incompleteRand!=NAN);
+        assert(s.modulus!=NAN);
+        assert(s.typeStruct!= (char)NULL);
+    }
 }
 
 void test_structure() {
@@ -322,7 +404,7 @@ void test_time_machine() {
     currentSeed = (currentSeed * 0x5deece66d + 0xb) & (unsigned long long) 0xffffffffffff;
     auto pillar = (unsigned int) ((currentSeed & 0xFFFF0000) >> 16u);
     unsigned long long iterated =
-            (currentSeed & (unsigned long long) 0xFFFF00000000) >> 16u | currentSeed & (unsigned long long) 0xFFFF;
+            ((currentSeed & (unsigned long long) 0xFFFF00000000) >> 16u) | (currentSeed & (unsigned long long) 0xFFFF);
     if (time_machine(iterated, pillar) == seed) {
         cout << "Bravo the time machine works" << endl;
     } else {
@@ -351,13 +433,17 @@ int main() {
     // test_pillars();
 
     //printf("%llu",pieces_together());
-    pieces_together();
+    //pieces_together();
+    test_data();
     //test_structure();
     return 0;
 }
 
 
 /*DATA FORMAT
- * First line will be 10 numbers between 76 and 103 (inclusive) by step of 3 all separated with commas
+ * First line will be minecraft version number, number of processes, biome size, river size
+ * Second line will be 10 numbers between 76 and 103 (inclusive) by step of 3 all separated with commas
  * Next n lines will be structures with first the unique salt, then the modulus of the structure then the type of structure
- * then the chunkX and the chunkZ all separated by commas.*/
+ * then the chunkX and the chunkZ all separated by commas.
+ * Line n+3 will be separator
+ * Next m lines will be biomes with first the biome id then coordinate x then coordinate z */
