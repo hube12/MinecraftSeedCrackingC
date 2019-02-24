@@ -117,7 +117,7 @@ unsigned int find_pillar_seed(const int *liste) {
     return 0;
 }
 
-unsigned long long time_machine(unsigned long long seed, unsigned int pillar_seed) {
+unsigned long long time_machine(unsigned long seed, unsigned int pillar_seed) {
     unsigned long long currentSeed;
     currentSeed = (seed << 16u & (unsigned long long) 0xFFFF00000000) | (pillar_seed << 16u) |
                   (seed & (unsigned long long) 0xFFFF);
@@ -227,7 +227,7 @@ unsigned long long multiprocess_structure(unsigned int pillar_seed, const vector
                           pillar_seed, a_struct);
 }
 
-unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Structure> arrayStruct) {
+unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Structure> &arrayStruct) {
     static const int num_of_threads = 8;
     std::thread threads[num_of_threads];
     unsigned long a[num_of_threads];
@@ -315,6 +315,21 @@ void test_structure() {
     }
 }
 
+void test_time_machine() {
+    unsigned long long seed = 123;
+    unsigned long long currentSeed = seed ^(unsigned long long) 0x5DEECE66D;
+    currentSeed = (currentSeed * 0x5deece66d + 0xb) & (unsigned long long) 0xffffffffffff;
+    currentSeed = (currentSeed * 0x5deece66d + 0xb) & (unsigned long long) 0xffffffffffff;
+    auto pillar = (unsigned int) ((currentSeed & 0xFFFF0000) >> 16u);
+    unsigned long long iterated =
+            (currentSeed & (unsigned long long) 0xFFFF00000000) >> 16u | currentSeed & (unsigned long long) 0xFFFF;
+    if (time_machine(iterated, pillar) == seed) {
+        cout << "Bravo the time machine works" << endl;
+    } else {
+        cout << "Come on, you are dumb" << endl;
+    }
+}
+
 void test_pillars() {
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -336,8 +351,8 @@ int main() {
     // test_pillars();
 
     //printf("%llu",pieces_together());
-    //pieces_together();
-    test_structure();
+    pieces_together();
+    //test_structure();
     return 0;
 }
 
