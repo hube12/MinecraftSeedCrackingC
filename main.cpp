@@ -10,6 +10,9 @@
 #include <cmath>
 #include <cstring>
 #include <assert.h>
+#include "generator.h"
+#include "layers.h"
+#include "finders.h"
 
 #define maxi (unsigned long)((1LLU<<32u)-1)
 using namespace std;
@@ -46,10 +49,10 @@ public:
         }
         long signed bits = next(31);
         long signed val = bits % bound;
-        while ((bits - val + bound - 1) < 0) {
+        do {
             bits = next(31);
             val = bits % bound;
-        }
+        }while ((bits - val + bound - 1) < 0);
         return val;
 
     }
@@ -86,9 +89,9 @@ public:
     int river;
 };
 
-class Biome {
+class Biomes {
 public:
-    explicit Biome(int id, long long cx, long long cz) {
+    explicit Biomes(int id, long long cx, long long cz) {
         this->id = id;
         this->cx = cx;
         this->cz = cz;
@@ -356,7 +359,7 @@ Globals parse_file() {
         long long cx = stoll(field);
         getline(biomes, field, ',');
         long long cz = stoll(field);
-        biomes_obj.emplace_back(Biome(id, cx, cz));
+        biomes_obj.emplace_back(Biomes(id, cx, cz));
     }
     return Globals(pillar_array, data, options_obj, biomes_obj);
 }
@@ -429,6 +432,16 @@ void test_pillars() {
     std::cout << std::endl;
 }
 
+void test_generation(){
+    initBiomes();
+    LayerStack g = setupGenerator();
+    Pos pos;
+    pos.x=0;pos.z=0;
+    applySeed(&g, 5);
+    int biome=getBiomeAtPos(g, pos);
+    printf("%d\n",biome);
+    freeGenerator(g);
+}
 int main() {
     // test_pillars();
 
