@@ -308,12 +308,16 @@ unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Str
 
 Globals parse_file() {
     string line, field;
-    ifstream in("data.txt");
 
+    ifstream in("data.txt");
+    if (in.fail() || !in) {
+        throw runtime_error("file was not loaded");
+    }
     //get the options
     getline(in, line);
     stringstream options(line);
     getline(options, field, ',');
+
     string version_number = field;
     getline(options, field, ',');
     int number_of_processes = stoi(field);
@@ -335,8 +339,8 @@ Globals parse_file() {
 
     //get the structures array
     vector<Structure> data;
-    string sep = "--------------------------\r";
-    while (getline(in, line) && !(sep == line)) {
+    string sep = "-------------------------\r";
+    while (getline(in, line) && sep.compare(line)) {
         stringstream structures(line);
         getline(structures, field, ',');
         long long salt = stoll(field);
@@ -351,8 +355,8 @@ Globals parse_file() {
         long long incompleteRand = (((chunkX < 0) ? chunkX - (modulus - 1) : chunkX) / modulus * 341873128712LL +
                                     ((chunkZ < 0) ? chunkZ - (modulus - 1) : chunkZ) / modulus * 132897987541LL + salt);
         data.emplace_back(Structure(chunkX, chunkZ, incompleteRand, modulus, typeStruct));
-    }
 
+    }
     //get the biomes array
     vector<Biomess> biomes_obj;
     while (getline(in, line)) {
@@ -366,7 +370,6 @@ Globals parse_file() {
         long long cz = stoll(field);
         biomes_obj.emplace_back(Biomess(id, cx, cz));
     }
-
     return Globals(pillar_array, data, options_obj, biomes_obj);
 }
 
@@ -399,7 +402,7 @@ void test_structure() {
     const Globals global_data = parse_file();
     unsigned int pillar_seed = find_pillar_seed(global_data.pillars_array);
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
-    unsigned long long seed = 123;
+    unsigned long long seed = 35652699581184;
     if (can_it_be_there(seed, 0, global_data.structures_array)) {
         cout << "Well done we found the right seed" << endl;
     } else {
@@ -443,7 +446,7 @@ void test_generation() {
     const Globals global_data = parse_file();
     initBiomes();
     LayerStack g = setupGenerator(MC_1_12);
-    bool flag=true;
+    bool flag = true;
     for (Biomess el:global_data.biome) {
         Pos pos;
         pos.x = el.cx;
@@ -453,14 +456,13 @@ void test_generation() {
         genArea(&g.layers[g.layerNum - 1], map, pos.x, pos.z, 1, 1);
         int biomeID = map[0];
         free(map);
-        flag= flag && (biomeID ==el.id);
+        flag = flag && (biomeID == el.id);
 
     }
-    if (flag){
-        cout<<"Well done we are sure our generation works"<<endl;
-    }
-    else{
-        cout<<"Oh no he is retarded"<<endl;
+    if (flag) {
+        cout << "Well done we are sure our generation works" << endl;
+    } else {
+        cout << "Oh no he is retarded" << endl;
     }
     freeGenerator(g);
 }
@@ -470,8 +472,9 @@ int main() {
 
     //printf("%llu",pieces_together());
     //pieces_together();
+    //test_data();
     //test_generation();
-    //test_structure();
+    test_structure();
     return 0;
 }
 
