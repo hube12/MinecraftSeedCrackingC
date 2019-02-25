@@ -76,7 +76,7 @@ STRUCT(Layer)
 
     int scale;          // map scale of this layer (map entry = scale x scale blocks)
 
-    void (*getMap)(Layer *layer, int *out, int x, int z, int w, int h);
+    void (*getMap)(Layer *layer, int *out, long long x, long long z, int w, int h);
 
     Layer *p, *p2;      // parent layers
 };
@@ -187,7 +187,7 @@ static inline int mcNextInt(Layer *layer, int mod)
 
 
 
-static inline int64_t processWorldSeed(register int64_t ws, const int64_t bs)
+static inline int64_t processWorldSeed( int64_t ws, const int64_t bs)
 {
     ws *= ws * 6364136223846793005LL + 1442695040888963407LL;
     ws += bs;
@@ -199,7 +199,7 @@ static inline int64_t processWorldSeed(register int64_t ws, const int64_t bs)
     return ws;
 }
 
-static inline int64_t getChunkSeed(register int64_t ss, const int64_t x, const int64_t z)
+static inline int64_t getChunkSeed(int64_t ss, const int64_t x, const int64_t z)
 {
     ss += x;
     ss *= ss * 6364136223846793005LL + 1442695040888963407LL;
@@ -438,36 +438,36 @@ static inline int selectModeOrRandom(Layer *l, int a1, int a2, int a3, int a4)
 //==============================================================================
 
 // A null layer does nothing, and can be used to apply a layer to existing data.
-void mapNull(Layer *l, int * __restrict out, int x, int z, int w, int h);
+void mapNull(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
 // A skip layer simply calls its first parent without modification.
 // This can be used as an easy way to skip a layer in a generator.
-void mapSkip(Layer *l, int * __restrict out, int x, int z, int w, int h);
+void mapSkip(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
 
-void mapIsland(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapZoom(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapAddIsland(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapRemoveTooMuchOcean(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapAddSnow(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapCoolWarm(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapHeatIce(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapSpecial(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapAddMushroomIsland(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapDeepOcean(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapBiome(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapRiverInit(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapBiomeEdge(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapHills(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapRiver(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapSmooth(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapRareBiome(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapShore(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapRiverMix(Layer *l, int * __restrict out, int x, int z, int w, int h);
+void mapIsland(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapZoom(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapAddIsland(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapRemoveTooMuchOcean(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapAddSnow(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapCoolWarm(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapHeatIce(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapSpecial(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapAddMushroomIsland(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapDeepOcean(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapBiome(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapRiverInit(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapBiomeEdge(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapHills(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapRiver(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapSmooth(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapRareBiome(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapShore(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapRiverMix(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
 
 // 1.13 layers
-void mapHills113(Layer *l, int * __restrict out, int x, int z, int w, int h);
-void mapOceanTemp(Layer *l, int * __restrict out, int areaX, int areaZ, int areaWidth, int areaHeight);
-void mapOceanMix(Layer *l, int * __restrict out, int areaX, int areaZ, int areaWidth, int areaHeight);
+void mapHills113(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
+void mapOceanTemp(Layer *l, int * __restrict out, long long areaX, long long areaZ, int areaWidth, int areaHeight);
+void mapOceanMix(Layer *l, int * __restrict out, long long areaX, long long areaZ, int areaWidth, int areaHeight);
 
-void mapVoronoiZoom(Layer *l, int * __restrict out, int x, int z, int w, int h);
+void mapVoronoiZoom(Layer *l, int * __restrict out, long long x, long long z, int w, int h);
 
 #endif /* LAYER_H_ */

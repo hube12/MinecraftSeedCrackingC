@@ -3,6 +3,6 @@ project(seed)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(seed generator.c layers.c main.cpp)
-add_executable(gen generator.c)
-add_executable(layer layers.c )
+add_executable(seed generator.hpp layers.hpp layers.cpp generator.cpp main.cpp)
+add_executable(gen generator.cpp)
+add_executable(layer layers.cpp)

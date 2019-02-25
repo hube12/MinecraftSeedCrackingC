@@ -10,12 +10,14 @@
 #include <cmath>
 #include <cstring>
 #include <assert.h>
-#include "generator.h"
-#include "layers.h"
-#include "finders.h"
+#include "generator.hpp"
+#include "layers.hpp"
 
 #define maxi (unsigned long)((1LLU<<32u)-1)
 using namespace std;
+STRUCT(Pos) {
+    long long x, z;
+};
 
 class Random {
 private:
@@ -49,10 +51,10 @@ public:
         }
         long signed bits = next(31);
         long signed val = bits % bound;
-        do {
+        while ((bits - val + bound - 1) < 0) {
             bits = next(31);
             val = bits % bound;
-        }while ((bits - val + bound - 1) < 0);
+        }
         return val;
 
     }
@@ -82,16 +84,17 @@ public:
         this->biome = biome;
         this->river = river;
     }
-    Options(){};
+
+    Options() {};
     string version;
     int processes;
     int biome;
     int river;
 };
 
-class Biomes {
+class Biomess {
 public:
-    explicit Biomes(int id, long long cx, long long cz) {
+    explicit Biomess(int id, long long cx, long long cz) {
         this->id = id;
         this->cx = cx;
         this->cz = cz;
@@ -106,7 +109,7 @@ class Globals {
 public:
     explicit Globals(const int *pillars_array, vector<Structure> structures_array,
                      Options option,
-                     vector<Biome> biomes) {
+                     vector<Biomess> biomes) {
         this->pillars_array = pillars_array;
         this->structures_array = move(structures_array);
         this->biome = move(biomes);
@@ -114,7 +117,7 @@ public:
     }
 
     Options option;
-    vector<Biome> biome;
+    vector<Biomess> biome;
     const int *pillars_array;
     vector<Structure> structures_array;
 };
@@ -332,8 +335,8 @@ Globals parse_file() {
 
     //get the structures array
     vector<Structure> data;
-    string sep="--------------------------\r";
-    while (getline(in, line) && sep.compare(line)) {
+    string sep = "--------------------------\r";
+    while (getline(in, line) && !(sep == line)) {
         stringstream structures(line);
         getline(structures, field, ',');
         long long salt = stoll(field);
@@ -349,18 +352,21 @@ Globals parse_file() {
                                     ((chunkZ < 0) ? chunkZ - (modulus - 1) : chunkZ) / modulus * 132897987541LL + salt);
         data.emplace_back(Structure(chunkX, chunkZ, incompleteRand, modulus, typeStruct));
     }
+
     //get the biomes array
-    vector<Biome> biomes_obj;
+    vector<Biomess> biomes_obj;
     while (getline(in, line)) {
-        stringstream biomes(line);
-        getline(biomes, field, ',');
+
+        stringstream bio(line);
+        getline(bio, field, ',');
         int id = stoi(field);
-        getline(biomes, field, ',');
+        getline(bio, field, ',');
         long long cx = stoll(field);
-        getline(biomes, field, ',');
+        getline(bio, field, ',');
         long long cz = stoll(field);
-        biomes_obj.emplace_back(Biomes(id, cx, cz));
+        biomes_obj.emplace_back(Biomess(id, cx, cz));
     }
+
     return Globals(pillar_array, data, options_obj, biomes_obj);
 }
 
@@ -371,20 +377,21 @@ unsigned long long pieces_together() {
     unsigned long long final_seed = multiprocess_structure(pillar_seed, global_data.structures_array);
     return final_seed;
 }
-void test_data(){
+
+void test_data() {
     const Globals global_data = parse_file();
-    assert (global_data.pillars_array!= nullptr);
-    for (Biome el:global_data.biome){
-        assert(el.cz!=NAN);
-        assert(el.cx!=NAN);
-        assert(el.id!=NAN);
+    assert (global_data.pillars_array != nullptr);
+    for (Biomess el:global_data.biome) {
+        assert(el.cz != NAN);
+        assert(el.cx != NAN);
+        assert(el.id != NAN);
     }
-    for (Structure s:global_data.structures_array){
-        assert(s.chunkX!=NAN);
-        assert(s.chunkZ!=NAN);
-        assert(s.incompleteRand!=NAN);
-        assert(s.modulus!=NAN);
-        assert(s.typeStruct!= (char)NULL);
+    for (Structure s:global_data.structures_array) {
+        assert(s.chunkX != NAN);
+        assert(s.chunkZ != NAN);
+        assert(s.incompleteRand != NAN);
+        assert(s.modulus != NAN);
+        assert(s.typeStruct != (char) NULL);
     }
 }
 
@@ -432,22 +439,38 @@ void test_pillars() {
     std::cout << std::endl;
 }
 
-void test_generation(){
+void test_generation() {
+    const Globals global_data = parse_file();
     initBiomes();
-    LayerStack g = setupGenerator();
-    Pos pos;
-    pos.x=0;pos.z=0;
-    applySeed(&g, 5);
-    int biome=getBiomeAtPos(g, pos);
-    printf("%d\n",biome);
+    LayerStack g = setupGenerator(MC_1_12);
+    bool flag=true;
+    for (Biomess el:global_data.biome) {
+        Pos pos;
+        pos.x = el.cx;
+        pos.z = el.cz;
+        applySeed(&g, 123);
+        int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
+        genArea(&g.layers[g.layerNum - 1], map, pos.x, pos.z, 1, 1);
+        int biomeID = map[0];
+        free(map);
+        flag= flag && (biomeID ==el.id);
+
+    }
+    if (flag){
+        cout<<"Well done we are sure our generation works"<<endl;
+    }
+    else{
+        cout<<"Oh no he is retarded"<<endl;
+    }
     freeGenerator(g);
 }
+
 int main() {
     // test_pillars();
 
     //printf("%llu",pieces_together());
     //pieces_together();
-    test_data();
+    //test_generation();
     //test_structure();
     return 0;
 }

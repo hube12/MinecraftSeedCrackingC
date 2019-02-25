@@ -1,29 +1,29 @@
-#include "generator.h"
-#include "layers.h"
+#include "generator.hpp"
+#include "layers.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 
-void setupLayer(int scale, Layer *l, Layer *p, int s, void (*getMap)(Layer *layer, int *out, int x, int z, int w, int h))
+void setupLayer(int scale, Layer *l, Layer *p, int s, void (*getMap)(Layer *layer, int *out, long long x, long long z, int w, int h))
 {
     setBaseSeed(l, s);
     l->scale = scale;
     l->p = p;
-    l->p2 = NULL;
+    l->p2 = nullptr;
     l->getMap = getMap;
-    l->oceanRnd = NULL;
+    l->oceanRnd = nullptr;
 }
 
-void setupMultiLayer(int scale, Layer *l, Layer *p1, Layer *p2, int s, void (*getMap)(Layer *layer, int *out, int x, int z, int w, int h))
+void setupMultiLayer(int scale, Layer *l, Layer *p1, Layer *p2, int s, void (*getMap)(Layer *layer, int *out, long long x, long long z, int w, int h))
 {
     setBaseSeed(l, s);
     l->scale = scale;
     l->p = p1;
     l->p2 = p2;
     l->getMap = getMap;
-    l->oceanRnd = NULL;
+    l->oceanRnd = nullptr;
 }
 
 
@@ -49,7 +49,7 @@ LayerStack setupGeneratorMC17()
     g.layers = (Layer*) malloc(sizeof(Layer)*g.layerNum);
 
     //         SCALE    LAYER          PARENT      SEED  LAYER_FUNCTION
-    setupLayer(4096, &g.layers[ 0],          NULL,    1, mapIsland);
+    setupLayer(4096, &g.layers[ 0], nullptr,    1, mapIsland);
     setupLayer(2048, &g.layers[ 1], &g.layers[ 0], 2000, mapZoom);
     setupLayer(2048, &g.layers[ 2], &g.layers[ 1],    1, mapAddIsland);
     setupLayer(1024, &g.layers[ 3], &g.layers[ 2], 2001, mapZoom);
@@ -119,7 +119,7 @@ LayerStack setupGeneratorMC113()
     g.layers = (Layer *) malloc(sizeof(Layer) * g.layerNum);
 
     //         SCALE    LAYER          PARENT      SEED  LAYER_FUNCTION
-    setupLayer(4096, &g.layers[ 0],          NULL,    1, mapIsland);
+    setupLayer(4096, &g.layers[ 0], nullptr,    1, mapIsland);
     setupLayer(2048, &g.layers[ 1], &g.layers[ 0], 2000, mapZoom);
     setupLayer(2048, &g.layers[ 2], &g.layers[ 1],    1, mapAddIsland);
     setupLayer(1024, &g.layers[ 3], &g.layers[ 2], 2001, mapZoom);
@@ -173,7 +173,7 @@ LayerStack setupGeneratorMC113()
     setupMultiLayer(4, &g.layers[42], &g.layers[33], &g.layers[41], 100, mapRiverMix);
 
     // ocean variants
-    setupLayer( 256, &g.layers[43],          NULL,    2, mapOceanTemp);
+    setupLayer( 256, &g.layers[43], nullptr,    2, mapOceanTemp);
     g.layers[43].oceanRnd = (OceanRnd *) malloc(sizeof(OceanRnd));
     setupLayer( 128, &g.layers[44], &g.layers[43], 2001, mapZoom);
     setupLayer(  64, &g.layers[45], &g.layers[44], 2002, mapZoom);
@@ -194,7 +194,7 @@ void freeGenerator(LayerStack g)
     int i;
     for(i = 0; i < g.layerNum; i++)
     {
-        if (g.layers[i].oceanRnd != NULL)
+        if (g.layers[i].oceanRnd != nullptr)
             free(g.layers[i].oceanRnd);
     }
 
@@ -205,9 +205,9 @@ void freeGenerator(LayerStack g)
 /* Recursively calculates the minimum buffer size required to generate an area
  * of the specified size from the current layer onwards.
  */
-static void getMaxArea(Layer *layer, int areaX, int areaZ, int *maxX, int *maxZ)
+static void getMaxArea(Layer *layer, long long areaX, long long areaZ, int *maxX, int *maxZ)
 {
-    if (layer == NULL)
+    if (layer == nullptr)
         return;
 
     if (layer->getMap == mapZoom)
@@ -241,16 +241,16 @@ static void getMaxArea(Layer *layer, int areaX, int areaZ, int *maxX, int *maxZ)
         }
     }
 
-    if (areaX > *maxX) *maxX = areaX;
-    if (areaZ > *maxZ) *maxZ = areaZ;
+    if (areaX > *maxX) *maxX = (int)areaX;
+    if (areaZ > *maxZ) *maxZ = (int)areaZ;
 
     getMaxArea(layer->p, areaX, areaZ, maxX, maxZ);
     getMaxArea(layer->p2, areaX, areaZ, maxX, maxZ);
 }
 
-int calcRequiredBuf(Layer *layer, int areaX, int areaZ)
+int calcRequiredBuf(Layer *layer, long long areaX, long long areaZ)
 {
-    int maxX = areaX, maxZ = areaZ;
+    int maxX = (int)areaX, maxZ = (int)areaZ;
     getMaxArea(layer, areaX, areaZ, &maxX, &maxZ);
 
     return maxX * maxZ;
@@ -273,7 +273,7 @@ void applySeed(LayerStack *g, int64_t seed)
     setWorldSeed(&g->layers[g->layerNum-1], seed);
 }
 
-void genArea(Layer *layer, int *out, int areaX, int areaZ, int areaWidth, int areaHeight)
+void genArea(Layer *layer, int *out, long long  areaX, long long areaZ, int areaWidth, int areaHeight)
 {
     memset(out, 0, areaWidth*areaHeight*sizeof(*out));
     layer->getMap(layer, out, areaX, areaZ, areaWidth, areaHeight);
