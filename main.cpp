@@ -19,6 +19,10 @@ STRUCT(Pos) {
     long long x, z;
 };
 
+constexpr unsigned int str2int(const char *str, int h = 0) {
+    return !str[h] ? 5381 : (str2int(str, h + 1) * 33) ^ str[h];
+}
+
 class Random {
 private:
     unsigned long long seed;
@@ -78,15 +82,15 @@ public:
 
 class Options {
 public:
-    Options(string version, int processes, int biome, int river) {
-        this->version = move(version);
+    Options(versions version, int processes, int biome, int river) {
+        this->version = version;
         this->processes = processes;
         this->biome = biome;
         this->river = river;
     }
 
     Options() {};
-    string version;
+    versions version;
     int processes;
     int biome;
     int river;
@@ -305,6 +309,42 @@ unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Str
     return 0;
 }
 
+versions parse_version(string s) {
+    versions v;
+    switch (str2int(s.c_str())) {
+        case str2int("1.7"):
+            v = MC_1_7;
+            break;
+        case str2int("1.8"):
+            v = MC_1_8;
+            break;
+        case str2int("1.9"):
+            v = MC_1_9;
+            break;
+        case str2int("1.10"):
+            v = MC_1_10;
+            break;
+        case str2int("1.11"):
+            v = MC_1_11;
+            break;
+        case str2int("1.12"):
+            v = MC_1_12;
+            break;
+        case str2int("1.13"):
+            v = MC_1_13;
+            break;
+        case str2int("1.13.2"):
+            v = MC_1_13_2;
+            break;
+        case str2int("1.14"):
+            v = MC_1_14;
+            break;
+        default:
+            v=MC_LEG;
+            break;
+    }
+    return v;
+}
 
 Globals parse_file() {
     string line, field;
@@ -318,7 +358,7 @@ Globals parse_file() {
     stringstream options(line);
     getline(options, field, ',');
 
-    string version_number = field;
+    versions version_number = parse_version(field);
     getline(options, field, ',');
     int number_of_processes = stoi(field);
     getline(options, field, ',');
@@ -340,7 +380,7 @@ Globals parse_file() {
     //get the structures array
     vector<Structure> data;
     string sep = "-------------------------\r";
-    while (getline(in, line) && sep !=line) {
+    while (getline(in, line) && sep != line) {
         stringstream structures(line);
         getline(structures, field, ',');
         long long salt = stoll(field);
@@ -359,7 +399,6 @@ Globals parse_file() {
     //get the biomes array
     vector<Biomess> biomes_obj;
     while (getline(in, line)) {
-
         stringstream bio(line);
         getline(bio, field, ',');
         int id = stoi(field);
@@ -440,29 +479,30 @@ void test_pillars() {
     std::cout << "It took me " << time_span.count() << " seconds.";
     std::cout << std::endl;
 }
-unsigned long long gen(vector<Biomess> bio,unsigned long long partial){
+
+unsigned long long gen(vector<Biomess> bio, unsigned long long partial) {
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     initBiomes();
     LayerStack g = setupGenerator(MC_1_12);
-    for (unsigned int i=0;i<(1<<16)-1;i++){
+    for (unsigned int i = 0; i < (1 << 16) - 1; i++) {
         bool flag = true;
         for (Biomess el:bio) {
             Pos pos;
             pos.x = el.cx;
             pos.z = el.cz;
-            applySeed(&g, (int64_t )((unsigned long long )i<<48|partial));
+            applySeed(&g, (int64_t) ((unsigned long long) i << 48 | partial));
             int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
             genArea(&g.layers[g.layerNum - 1], map, pos.x, pos.z, 1, 1);
             int biomeID = map[0];
             free(map);
             flag = flag && (biomeID == el.id);
-            if (!flag){
+            if (!flag) {
                 break;
             }
         }
-        if(flag){
-            cout<<"Seed found : "<<(((unsigned long long )i<<48)|partial)<<endl;
+        if (flag) {
+            cout << "Seed found : " << (((unsigned long long) i << 48) | partial) << endl;
         }
     }
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -472,14 +512,15 @@ unsigned long long gen(vector<Biomess> bio,unsigned long long partial){
     freeGenerator(g);
 }
 
-void test_gen(){
+void test_gen() {
     const Globals global_data = parse_file();
-    gen(global_data.biome,123);
+    gen(global_data.biome, 123);
 }
+
 void test_generation() {
     const Globals global_data = parse_file();
     initBiomes();
-    LayerStack g = setupGenerator(MC_1_12);
+    LayerStack g = setupGenerator(global_data.option.version);
     bool flag = true;
     for (Biomess el:global_data.biome) {
         Pos pos;
