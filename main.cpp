@@ -14,7 +14,6 @@
 #include "layers.hpp"
 
 #define maxi (unsigned long)((1LLU<<32u)-1)
-using namespace std;
 STRUCT(Pos) {
     long long x, z;
 };
@@ -111,23 +110,23 @@ public:
 
 class Globals {
 public:
-    explicit Globals(const int *pillars_array, vector<Structure> structures_array,
+    explicit Globals(const int *pillars_array, std::vector<Structure> structures_array,
                      Options option,
-                     vector<Biomess> biomes) {
+                     std::vector<Biomess> biomes) {
         this->pillars_array = pillars_array;
         this->structures_array = move(structures_array);
         this->biome = move(biomes);
-        this->option = move(option);
+        this->option = option;
     }
 
     Options option;
-    vector<Biomess> biome;
+    std::vector<Biomess> biome;
     const int *pillars_array;
-    vector<Structure> structures_array;
+    std::vector<Structure> structures_array;
 };
 
 int *shuffling(unsigned int seed, int *liste) {
-    Random r = Random((unsigned long long) seed);
+    auto r = Random((unsigned long long) seed);
     for (unsigned int i = 10; i > 1; i--) {
         auto j = (int) r.nextInt(i);
         int temp = liste[i - 1];
@@ -160,8 +159,8 @@ unsigned int find_pillar_seed(const int *liste) {
             return i;
         }
     }
-    //TODO throw an exception here
-    return 0;
+    std::cerr<<"Out of bounds for pillar seed"<<std::endl;
+    throw std::range_error("Out of bounds for pillar seed\n");
 }
 
 unsigned long long time_machine(unsigned long seed, unsigned int pillar_seed) {
@@ -174,9 +173,9 @@ unsigned long long time_machine(unsigned long seed, unsigned int pillar_seed) {
     return currentSeed;
 }
 
-bool can_it_be_there(unsigned long long currentSeed, int index, vector<Structure> arrayStruct) {
+bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Structure> arrayStruct) {
     Structure el = arrayStruct[index];
-    Random r = Random(currentSeed + el.incompleteRand);
+    auto r = Random(currentSeed + el.incompleteRand);
     long signed k, m;
     if (el.typeStruct == 's') {
         k = r.nextInt(24);
@@ -196,7 +195,7 @@ bool can_it_be_there(unsigned long long currentSeed, int index, vector<Structure
         if (index > 3) {
             printf("Good seed: %llu \n", currentSeed);
         }
-        if (index == arrayStruct.size() - 1) {
+        if (index == (int)arrayStruct.size() - 1) {
             return true;
         }
         return can_it_be_there(currentSeed, index + 1, arrayStruct);
@@ -204,7 +203,7 @@ bool can_it_be_there(unsigned long long currentSeed, int index, vector<Structure
     return false;
 }
 
-unsigned long long test_them_all(unsigned int pillar_seed, const vector<Structure> &arrayStruct) {
+unsigned long long test_them_all(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct) {
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     for (unsigned long i = 0; i < maxi; i++) {
@@ -213,7 +212,7 @@ unsigned long long test_them_all(unsigned int pillar_seed, const vector<Structur
             return currentSeed;
         }
         if ((i % (1LLU << 28u)) == 0) {
-            cout << "We are at: " << (double) (i) / (double) (maxi) << " " << i << " " << maxi << endl;
+            std::cout << "We are at: " << (double) (i) / (double) (maxi) << " " << i << " " << maxi << std::endl;
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
             std::cout << "It took me " << time_span.count() << " seconds.";
@@ -223,9 +222,8 @@ unsigned long long test_them_all(unsigned int pillar_seed, const vector<Structur
     return UINT_FAST64_MAX;
 }
 
-unsigned long long
-structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, unsigned int pillar_seed,
-                      const vector<Structure> *arrayStruct) {
+unsigned long long structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, unsigned int pillar_seed,
+                      const std::vector<Structure> *arrayStruct) {
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     for (unsigned long i = 0; i < n_iter; i++) {
@@ -235,16 +233,17 @@ structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, uns
             return currentSeed;
         }
         if ((i % (n_iter / 10)) == 0) {
-            cout << "We are at: " << (double) (i + a[thread_id]) / (double) (maxi) << endl;
+            std::cout << "We are at: " << (double) (i + a[thread_id]) / (double) (maxi) << std::endl;
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
             duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-            std::cout << "It took me " << time_span.count() << " seconds." << endl;
+            std::cout << "It took me " << time_span.count() << " seconds." << std::endl;
         }
     }
+    return 0;
 }
 
 
-vector<Structure> *array_of_struct(int num_of_threads, vector<Structure> arrayStruct, vector<Structure> *a) {
+std::vector<Structure> *array_of_struct(int num_of_threads, std::vector<Structure> arrayStruct, std::vector<Structure> *a) {
 
     for (int i = 0; i < num_of_threads; i++) {
         for (Structure el :arrayStruct) {
@@ -255,46 +254,47 @@ vector<Structure> *array_of_struct(int num_of_threads, vector<Structure> arraySt
     return a;
 }
 
-int return_id(vector<pid_t> &array) {
+int return_id(std::vector<pid_t> &array) {
     int retval = 0;
-    for (int i = 0; i < array.size(); i++) {
+    for (int i = 0; i < (int)array.size(); i++) {
         retval += (array[i] > 0 ? 1 : 0) * (int) pow(2, i);
     }
     return retval;
 }
 
-unsigned long long multiprocess_structure(unsigned int pillar_seed, const vector<Structure> &arrayStruct) {
+unsigned long long multiprocess_structure(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct) {
     pid_t pid1 = fork();
     pid_t pid2 = fork();
     pid_t pid3 = fork();
     static const int num_of_process = 8;
     unsigned long a[num_of_process];
     unsigned long iota = maxi / num_of_process;
-    vector<Structure> a_struct[num_of_process];
+    std::vector<Structure> a_struct[num_of_process];
     array_of_struct(num_of_process, arrayStruct, a_struct);
     for (int i = 0; i < num_of_process; i++) {
         a[i] = iota * i;
     }
-    vector<pid_t> pids;
+    std::vector<pid_t> pids;
     pids.push_back(pid1);
     pids.push_back(pid2);
     pids.push_back(pid3);
     structure_seed_single(a, iota, return_id(pids), pillar_seed, a_struct);
+    return 0;
 }
 
-unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Structure> &arrayStruct) {
+unsigned long long threaded_structure(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct) {
     static const int num_of_threads = 8;
-    cout << num_of_threads << endl;
-    thread threads[num_of_threads];
+    std::cout << num_of_threads << std::endl;
+    std::thread threads[num_of_threads];
     unsigned long a[num_of_threads];
     unsigned long iota = maxi / num_of_threads;
-    vector<Structure> a_struct[num_of_threads];
+    std::vector<Structure> a_struct[num_of_threads];
     array_of_struct(num_of_threads, arrayStruct, a_struct);
     for (int i = 0; i < num_of_threads; i++) {
         a[i] = iota * i;
     }
     for (int i = 0; i < num_of_threads; ++i) {
-        threads[i] = thread(structure_seed_single, a, iota, i, pillar_seed, a_struct);
+        threads[i] = std::thread(structure_seed_single, a, iota, i, pillar_seed, a_struct);
     }
     for (auto &t:threads) {
         t.join();
@@ -309,7 +309,7 @@ unsigned long long threaded_structure(unsigned int pillar_seed, const vector<Str
     return 0;
 }
 
-versions parse_version(string s) {
+versions parse_version(std::string& s) {
     versions v;
     switch (str2int(s.c_str())) {
         case str2int("1.7"):
@@ -347,70 +347,72 @@ versions parse_version(string s) {
 }
 
 Globals parse_file() {
-    string line, field;
+    std::string line, field;
 
-    ifstream in("data.txt");
-    if (in.fail() || !in) {
-        throw runtime_error("file was not loaded");
+    std::ifstream datafile("data.txt",std::ios::in);
+    if (datafile.fail() || !datafile) {
+        throw std::runtime_error("file was not loaded");
     }
     //get the options
-    getline(in, line);
-    stringstream options(line);
-    getline(options, field, ',');
+    std:: getline(datafile, line);
+    std::stringstream options(line);
 
+    std::getline(options, field, ',');
     versions version_number = parse_version(field);
-    getline(options, field, ',');
+    std::getline(options, field, ',');
     int number_of_processes = stoi(field);
-    getline(options, field, ',');
+    std::getline(options, field, ',');
     int biome_size = stoi(field);
-    getline(options, field, ',');
+    std::getline(options, field, ',');
     int river_size = stoi(field);
+
     Options options_obj(version_number, number_of_processes, biome_size, river_size);
 
     //get the pillars array
-    getline(in, line);
-    stringstream pilars(line);
+    std::getline(datafile, line);
+    std::stringstream pilars(line);
+
     int static pillar_array[10];
     int i = 0;
-    while (i < 10 && getline(pilars, field, ',')) {
+    while (i < 10 && std::getline(pilars, field, ',')) {
         pillar_array[i] = stoi(field);
         i++;
     }
 
     //get the structures array
-    vector<Structure> data;
-    string sep = "-------------------------\r";
-    while (getline(in, line) && sep != line) {
-        stringstream structures(line);
-        getline(structures, field, ',');
+    std::vector<Structure> data;
+    std::string sep = "-------------------------\r";
+    while (std::getline(datafile, line) && sep != line) {
+        std::stringstream structures(line);
+        std::getline(structures, field, ',');
         long long salt = stoll(field);
-        getline(structures, field, ',');
+        std::getline(structures, field, ',');
         int modulus = stoi(field);
-        getline(structures, field, ',');
+        std::getline(structures, field, ',');
         char typeStruct = field[0];
-        getline(structures, field, ',');
+        std::getline(structures, field, ',');
         long long chunkX = stoll(field);
-        getline(structures, field, ',');
+        std::getline(structures, field, ',');
         long long chunkZ = stoll(field);
         long long incompleteRand = (((chunkX < 0) ? chunkX - (modulus - 1) : chunkX) / modulus * 341873128712LL +
                                     ((chunkZ < 0) ? chunkZ - (modulus - 1) : chunkZ) / modulus * 132897987541LL + salt);
         data.emplace_back(Structure(chunkX, chunkZ, incompleteRand, modulus, typeStruct));
     }
     //get the biomes array
-    vector<Biomess> biomes_obj;
-    while (getline(in, line)) {
-        stringstream bio(line);
-        getline(bio, field, ',');
+    std:: vector<Biomess> biomes_obj;
+    while (std::getline(datafile, line)) {
+        std::stringstream bio(line);
+        std::getline(bio, field, ',');
         int id = stoi(field);
-        getline(bio, field, ',');
+        std::getline(bio, field, ',');
         long long cx = stoll(field);
-        getline(bio, field, ',');
+        std::getline(bio, field, ',');
         long long cz = stoll(field);
         biomes_obj.emplace_back(Biomess(id, cx, cz));
     }
     return Globals(pillar_array, data, options_obj, biomes_obj);
 }
-unsigned long long gen(vector<Biomess> bio, unsigned long long partial) {
+unsigned long long gen(std::vector<Biomess> bio, unsigned long long partial) {
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     initBiomes();
@@ -432,23 +434,24 @@ unsigned long long gen(vector<Biomess> bio, unsigned long long partial) {
             }
         }
         if (flag) {
-            cout << "Seed found : " << (((unsigned long long) i << 48) | partial) << endl;
+            std::cout << "Seed found : " << (((unsigned long long) i << 48) | partial) << std::endl;
         }
     }
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-    std::cout << "It took me " << time_span.count() << " seconds." << endl;
+    std::cout << "It took me " << time_span.count() << " seconds." << std::endl;
 
     freeGenerator(g);
+    return 0;
 }
 
 unsigned long long pieces_together() {
     const Globals global_data = parse_file();
     unsigned int pillar_seed = find_pillar_seed(global_data.pillars_array);
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
-    unsigned long long final_seed = multiprocess_structure(pillar_seed, global_data.structures_array);
-    gen(global_data.biome, final_seed);
-    return final_seed;
+    //unsigned long long final_seed = multiprocess_structure(pillar_seed, global_data.structures_array);
+    gen(global_data.biome, 26439374633731);
+    return 0;
 }
 
 void test_data() {
@@ -466,6 +469,7 @@ void test_data() {
         assert(s.modulus != NAN);
         assert(s.typeStruct != (char) NULL);
     }
+    std::cout<<"Data test passed"<<std::endl;
 }
 
 void test_structure() {
@@ -474,9 +478,9 @@ void test_structure() {
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
     unsigned long long seed = 35652699581184;
     if (can_it_be_there(seed, 0, global_data.structures_array)) {
-        cout << "Well done we found the right seed" << endl;
+        std::cout << "Well done we found the right seed" << std::endl;
     } else {
-        cout << "Come on" << endl;
+        std::cout << "Come on" << std::endl;
     }
 }
 
@@ -489,9 +493,9 @@ void test_time_machine() {
     unsigned long long iterated =
             ((currentSeed & (unsigned long long) 0xFFFF00000000) >> 16u) | (currentSeed & (unsigned long long) 0xFFFF);
     if (time_machine(iterated, pillar) == seed) {
-        cout << "Bravo the time machine works" << endl;
+        std::cout << "Bravo the time machine works" << std::endl;
     } else {
-        cout << "Come on, you are dumb" << endl;
+        std::cout << "Come on, you are dumb" << std::endl;
     }
 }
 
@@ -536,17 +540,17 @@ void test_generation() {
         flag = flag && (biomeID == el.id);
     }
     if (flag) {
-        cout << "Well done we are sure our generation works" << endl;
+        std::cout << "Well done we are sure our generation works" << std::endl;
     } else {
-        cout << "Oh no he is retarded" << endl;
+        std::cout << "Oh no he is retarded" << std::endl;
     }
     freeGenerator(g);
 }
 
 int main() {
-
+    test_data();
     unsigned long long partial_seed=pieces_together();
-    cout<<partial_seed<<endl;
+    std::cout<<partial_seed<<std::endl;
     return 0;
 }
 
