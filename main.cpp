@@ -412,11 +412,11 @@ Globals parse_file() {
     }
     return Globals(pillar_array, data, options_obj, biomes_obj);
 }
-unsigned long long gen(std::vector<Biomess> bio, unsigned long long partial) {
+unsigned long long gen(std::vector<Biomess> bio, unsigned long long partial, versions version) {
     using namespace std::chrono;
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     initBiomes();
-    LayerStack g = setupGenerator(MC_1_12);
+    LayerStack g = setupGenerator(version);
     for (unsigned int i = 0; i < (1 << 16) - 1; i++) {
         bool flag = true;
         for (Biomess el:bio) {
@@ -449,8 +449,8 @@ unsigned long long pieces_together() {
     const Globals global_data = parse_file();
     unsigned int pillar_seed = find_pillar_seed(global_data.pillars_array);
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
-    //unsigned long long final_seed = multiprocess_structure(pillar_seed, global_data.structures_array);
-    gen(global_data.biome, 26439374633731);
+    unsigned long long final_seed = multiprocess_structure(pillar_seed, global_data.structures_array);
+    gen(global_data.biome, 26439374633731,global_data.option.version);
     return 0;
 }
 
@@ -520,7 +520,7 @@ void test_pillars() {
 
 void test_gen() {
     const Globals global_data = parse_file();
-    gen(global_data.biome, 123);
+    gen(global_data.biome, 123,global_data.option.version);
 }
 
 void test_generation() {
