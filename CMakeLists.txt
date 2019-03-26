@@ -5,3 +5,4 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_XX_FLAGS} -Wall -Werror")
 
 add_executable(seed generator.hpp layers.hpp layers.cpp generator.cpp main.cpp)
+add_executable(test test.cc)
