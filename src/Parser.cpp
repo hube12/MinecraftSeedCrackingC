@@ -1,6 +1,5 @@
 #include "Parser.hpp"
 #include <fstream>
-#include <iostream>
 #include <sstream>
 
 constexpr unsigned int str2int(const char *str, int h = 0) {

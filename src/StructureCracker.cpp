@@ -66,27 +66,3 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
 
 }
 
-void assemble_logs(int processes) {
-    std::ofstream log("final_log.txt", std::ios_base::out | std::ios::trunc);
-    if (log.is_open()) {
-        for (auto thread_id = 0; thread_id < processes; thread_id++) {
-            std::ifstream partial_log("log_process" + std::to_string(thread_id), std::ios_base::in);
-            if (partial_log.is_open()) {
-                log << partial_log.rdbuf();
-                partial_log.close();
-            } else {
-                throw std::runtime_error("log file was not loaded: " + std::to_string(thread_id));
-            }
-        }
-
-        log.close();
-    } else {
-        throw std::runtime_error("log main file was not loaded:");
-    }
-    std::ifstream partial_log("final_log.txt", std::ios_base::in);
-    if (log.is_open()) {
-
-    } else {
-        throw std::runtime_error("log main file was not loaded:");
-    }
-}
