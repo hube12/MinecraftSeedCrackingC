@@ -92,8 +92,51 @@ Globals parse_file(std::string filename) {
         long long chunkX = stoll(field);
         std::getline(structures, field, ',');
         long long chunkZ = stoll(field);
-        long long incompleteRand = (((chunkX < 0) ? chunkX - (modulus - 1) : chunkX) / modulus * 341873128712LL +
-                                    ((chunkZ < 0) ? chunkZ - (modulus - 1) : chunkZ) / modulus * 132897987541LL + salt);
+        switch (typeStruct) {
+            case 'i': //igloo
+                salt = 14357618;
+                typeStruct = 's';
+                break;
+            case 't': //treasure
+                salt = 10387320;
+                break;
+            case 'd': //desert temple
+                salt = 14357617;
+                typeStruct = 's';
+                break;
+            case 'e': //end city
+                salt = 10387313;
+                break;
+            case 'j': //jungle temple
+                salt = 14357619;
+                typeStruct = 's';
+                break;
+            case 'o': //ocean monument
+                salt = 10387313;
+                break;
+            case 'v': //village
+                salt = 10387312;
+                typeStruct = 's';
+                break;
+            case 'w': //shipwreck
+                salt = 165745295;
+                break;
+            case 'r': //ocean ruins
+                salt = 14357621;
+                break;
+            case 'm': //ocean ruins
+                salt = 10387319;
+                break;
+            case 'h': //swamp hut
+                salt = 14357620;
+                typeStruct = 's';
+                break;
+        }
+        long long incompleteRand = (
+                ((chunkX < 0) ? (version_number == MC_1_13 ? (chunkX - modulus - 1) : (chunkX - (modulus - 1)))
+                              : chunkX) / modulus * 341873128712LL +
+                ((chunkZ < 0) ? (version_number == MC_1_13 ? (chunkX - modulus - 1) : (chunkX - (modulus - 1)))
+                              : chunkZ) / modulus * 132897987541LL + salt);
         data.emplace_back(Structure(chunkX, chunkZ, incompleteRand, modulus, typeStruct));
     }
     //get the biomes array

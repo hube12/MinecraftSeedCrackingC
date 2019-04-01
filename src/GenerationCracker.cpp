@@ -29,8 +29,9 @@ std::vector<unsigned long long> gen(std::vector<Biomess> bio, unsigned long long
         free(map);
         if (flag) {
             unsigned long long seedf=((((unsigned long long) i) << 48) | partial);
-            if(seedf & INT64_MAX){
-                std::cout << "Final seed found : " <<seedf -UINT64_MAX << std::endl;
+            std::cout<<(seedf & 0x7FFFFFFFFFFFFFFF)<<" "<<0x7FFFFFFFFFFFFFFF<<" "<<seedf<<std::endl;
+            if((seedf & 0x7FFFFFFFFFFFFFFF)!=0){
+                std::cout << "Final seed found : " <<(seedf -0xFFFFFFFFFFFFFFFF) << std::endl;
             }
             else{
                 std::cout << "Final seed found : " <<seedf<< std::endl;
@@ -51,9 +52,8 @@ gen_handler(std::vector<Biomess> bio, std::vector<unsigned long long> partials, 
     for (auto el:partials) {
         std::vector<unsigned long long> tempo = gen(bio, el, version);
         for (auto e:tempo) {
-            std::cout << e << std::endl;
+            finals_seeds.push_back(e);
         }
-        finals_seeds.reserve(finals_seeds.size() + distance(tempo.begin(), tempo.end()));
     }
     return finals_seeds;
 }

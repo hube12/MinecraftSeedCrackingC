@@ -39,6 +39,9 @@ public:
             val = bits % bound;
         }
         return val;
+    }
 
+    float nextFloat() {
+        return next(24) / (float) (1 << 24);
     }
 };

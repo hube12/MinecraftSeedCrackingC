@@ -75,8 +75,8 @@ std::vector<unsigned long long> assemble_logs(int processes) {
         }
         log.close();
     } else {
-        throw std::runtime_error("log main file was not loaded:");
+        throw std::runtime_error("Log main file was not loaded:");
     }
-    std::cout<<"log file was recompiled"<<std::endl;
+    std::cout<<"Log file was recompiled"<<std::endl;
     return partials_possible_seed;
 }

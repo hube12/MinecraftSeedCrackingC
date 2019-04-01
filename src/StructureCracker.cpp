@@ -11,19 +11,44 @@ bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Stru
     Structure el = arrayStruct[index];
     auto r = Random(currentSeed + el.incompleteRand);
     long signed k, m;
-    if (el.typeStruct == 's') {
-        k = r.nextInt(24);
-        m = r.nextInt(24);
-    } else if (el.typeStruct == 'e') {
-        k = (r.nextInt(9) + r.nextInt(9)) / 2;
-        m = (r.nextInt(9) + r.nextInt(9)) / 2;
-    } else if (el.typeStruct == 'o') {
-        k = (r.nextInt(27) + r.nextInt(27)) / 2;
-        m = (r.nextInt(27) + r.nextInt(27)) / 2;
-    } else {
-        k = (r.nextInt(60) + r.nextInt(60)) / 2;
-        m = (r.nextInt(60) + r.nextInt(60)) / 2;
+    switch (el.typeStruct) {
+        case 's': //old structures: igloo, witch hut, desert temple, jungle temple, village
+            k = r.nextInt(24);
+            m = r.nextInt(24);
+            break;
+        case 'e': //end cities
+            k = (r.nextInt(9) + r.nextInt(9)) / 2;
+            m = (r.nextInt(9) + r.nextInt(9)) / 2;
+            break;
+        case 'o': //ocean monuments
+            k = (r.nextInt(27) + r.nextInt(27)) / 2;
+            m = (r.nextInt(27) + r.nextInt(27)) / 2;
+            break;
+        case 'm': //mansions
+            k = (r.nextInt(60) + r.nextInt(60)) / 2;
+            m = (r.nextInt(60) + r.nextInt(60)) / 2;
+            break;
+        case 'r': //ruins
+            k = (r.nextInt(8) + r.nextInt(8)) / 2;
+            m = (r.nextInt(8) + r.nextInt(8)) / 2;
+            break;
+        case 'w': //shipwreck
+            k = (r.nextInt(8) + r.nextInt(8)) / 2;
+            m = (r.nextInt(8) + r.nextInt(8)) / 2;
+            break;
+        case 't': //treasures
+            if (r.nextFloat() < 0.01) {
+                if (index > 3) {
+                    printf("Good seed: %llu \n", currentSeed);
+                }
+                if (index == (int) arrayStruct.size() - 1) {
+                    return true;
+                }
+                return can_it_be_there(currentSeed, index + 1, arrayStruct);
+            }
+            return false;
     }
+
     if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k &&
         m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus)) {
         if (index > 3) {
@@ -44,7 +69,7 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
     if (file.is_open()) {
         std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
         for (unsigned long i = 0; i < n_iter; i++) {
-            if (0!=kill(pidMain,0)){
+            if (((i + 1) % (n_iter / 100)) == 0 && 0 != kill(pidMain, 0)) {
                 file.close();
                 exit(0);
             }

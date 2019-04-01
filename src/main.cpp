@@ -36,8 +36,8 @@ int main() {
         std::ofstream save("final_seeds.txt", std::ios_base::out | std::ios::trunc);
         if (save.is_open()) {
             for (auto el:final_seeds) {
-                std::cout << "Final seeds " << ((el & INT64_MAX)?el-UINT64_MAX:el) << std::endl;
-                save << ((el & INT64_MAX)?el-UINT64_MAX:el) << std::endl;
+                std::cout << "Final seeds " << ((el & 0x7FFFFFFFFFFFFFFF)!=0?el-UINT64_MAX:el) << std::endl;
+                save << ((el & 0x7FFFFFFFFFFFFFFF)!=0?el-UINT64_MAX:el) << std::endl;
             }
         } else {
             std::cout << "save file was not loaded" << std::endl;
