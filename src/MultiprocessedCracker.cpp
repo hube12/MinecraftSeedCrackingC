@@ -42,7 +42,7 @@ void multiprocess_structure(unsigned int pillar_seed, const std::vector<Structur
 
     static const int num_of_process = processes;
     unsigned long a[num_of_process];
-    unsigned long iota = (unsigned long) ((1LLU << 32u) - 1) / num_of_process/4;
+    unsigned long iota = (unsigned long) ((1LLU << 32u) - 1) / num_of_process;
     std::vector<Structure> a_struct[num_of_process];
     array_of_struct(num_of_process, arrayStruct, a_struct);
     for (int i = 0; i < num_of_process; i++) {
