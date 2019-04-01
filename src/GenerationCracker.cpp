@@ -34,16 +34,23 @@ std::vector<unsigned long long> gen(std::vector<Biomess> bio, unsigned long long
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
     std::cout << "It took me " << time_span.count() << " seconds." << std::endl;
-
+    std::cout<<"hey"<<std::endl;
     freeGenerator(g);
+    std::cout<<"hey"<<std::endl;
     return final_seeds;
 }
 
-std::vector<unsigned long long> gen_handler(std::vector<Biomess> bio, std::vector<unsigned long long> partials, versions version){
+std::vector<unsigned long long>
+gen_handler(std::vector<Biomess> bio, std::vector<unsigned long long> partials, versions version) {
     std::vector<unsigned long long> finals_seeds;
-    for (auto el:partials){
-        std::vector<unsigned long long> tempo=gen(bio,el,version);
-        finals_seeds.reserve(finals_seeds.size() + distance(tempo.begin(),tempo.end()));
+    std::cout << partials.size() << std::endl;
+    for (auto el:partials) {
+        std::cout << el << std::endl;
+        std::vector<unsigned long long> tempo = gen(bio, el, version);
+        for (auto e:tempo) {
+            std::cout << e << std::endl;
+        }
+        finals_seeds.reserve(finals_seeds.size() + distance(tempo.begin(), tempo.end()));
     }
     return finals_seeds;
 }

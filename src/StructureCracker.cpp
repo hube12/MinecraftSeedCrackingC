@@ -58,7 +58,6 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
                 std::cout << "% and it took me " << time_span.count() << " seconds." << std::endl;
             }
         }
-
         file.close();
     } else {
         throw std::runtime_error("log file was not loaded: " + std::to_string(thread_id));

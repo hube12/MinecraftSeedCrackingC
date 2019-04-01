@@ -33,6 +33,7 @@ void multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure>
         }
     }
     multiprocess_structure(pillar_seed, arrayStruct, processes, pids);
+    exit(0);
 }
 
 void multiprocess_structure(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes,
@@ -51,7 +52,8 @@ void multiprocess_structure(unsigned int pillar_seed, const std::vector<Structur
 
 std::vector<unsigned long long> assemble_logs(int processes) {
     std::vector<unsigned long long> partials_possible_seed;
-    std::ofstream log("final_log.txt", std::ios_base::out | std::ios::trunc);
+    std::remove("final_log.txt");
+    std::ofstream log("final_log.txt", std::ios_base::out | std::ios::app);
     if (log.is_open()) {
         for (auto thread_id = 0; thread_id < processes; thread_id++) {
             std::ifstream partial_log("log_process" + std::to_string(thread_id), std::ios_base::in);
@@ -65,6 +67,7 @@ std::vector<unsigned long long> assemble_logs(int processes) {
                 std::remove(("log_process" + std::to_string(thread_id)).c_str());
                 bool failed = !std::ifstream("log_process" + std::to_string(thread_id));
                 if (!failed) { std::perror("Error deleting file"); std::cout<<"Error deleting file"<<std::endl;}
+
             } else {
                 throw std::runtime_error("log file was not loaded: " + std::to_string(thread_id));
             }
