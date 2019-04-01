@@ -52,6 +52,7 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
                 printf("Partial seed found: %llu\n", currentSeed);
                 file << currentSeed << std::endl;
             }
+
             if (((i + 1) % (n_iter / 10)) == 0 && thread_id == 0) {
                 std::cout << "We are at: "
                           << ((double) (i + a[thread_id]) / (double) (unsigned long) ((1LLU << 32u) - 1)) *

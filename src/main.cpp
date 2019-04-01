@@ -6,6 +6,10 @@
 #include <fstream>
 #include <wait.h>
 
+void signalHandler(int signum){
+    std::cout<<"received"<<signum<<"on "<<getgid()<<std::endl;
+    kill(-getgid(),SIGKILL);
+}
 int main(){
     std::string filename="data_example.txt";
     const Globals global_data = parse_file(filename);
@@ -13,9 +17,13 @@ int main(){
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
     pid_t pidMain=fork();
     if (pidMain==0){
-        multiprocess_handler(pillar_seed, global_data.structures_array,global_data.option.processes,pidMain);
+        setpgid(getpid(),getppid());
+        multiprocess_handler(pillar_seed, global_data.structures_array,global_data.option.processes,getppid());
+
     }
     else{
+        setpgid(getpid(),getpid());
+        signal(SIGTERM,signalHandler);
         wait(nullptr);
         std::vector<unsigned long long> partials_seeds=assemble_logs(global_data.option.processes);
         for (auto el:partials_seeds){
