@@ -37,12 +37,16 @@ bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Stru
 }
 
 void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, unsigned int pillar_seed,
-                           const std::vector<Structure> *arrayStruct, int processes) {
+                           const std::vector<Structure> *arrayStruct, int processes, pid_t pidMain) {
     std::ofstream file;
     file.open("log_process" + std::to_string(thread_id), std::ios::out | std::ios::trunc);
     if (file.is_open()) {
         std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
         for (unsigned long i = 0; i < n_iter; i++) {
+            if (0!=kill(pidMain,0)){
+                file.close();
+                exit(0);
+            }
             unsigned long long currentSeed = time_machine(i + a[thread_id], pillar_seed);
             if (can_it_be_there(currentSeed, 0, arrayStruct[thread_id])) {
                 printf("Partial seed found: %llu\n", currentSeed);

@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-void multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes) {
+void multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes, pid_t pidMain) {
     std::vector<pid_t> pids;
     switch (processes) {
         case 2: {
@@ -32,12 +32,12 @@ void multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure>
             processes = 1;
         }
     }
-    multiprocess_structure(pillar_seed, arrayStruct, processes, pids);
+    multiprocess_structure(pillar_seed, arrayStruct, processes, pids,pidMain);
     exit(0);
 }
 
 void multiprocess_structure(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes,
-                            std::vector<pid_t> pids) {
+                            std::vector<pid_t> pids, pid_t pidMain) {
 
     static const int num_of_process = processes;
     unsigned long a[num_of_process];
@@ -47,7 +47,7 @@ void multiprocess_structure(unsigned int pillar_seed, const std::vector<Structur
     for (int i = 0; i < num_of_process; i++) {
         a[i] = iota * i;
     }
-    structure_seed_single(a, iota, return_id(pids), pillar_seed, a_struct, processes);
+    structure_seed_single(a, iota, return_id(pids), pillar_seed, a_struct, processes,pidMain);
 }
 
 std::vector<unsigned long long> assemble_logs(int processes) {

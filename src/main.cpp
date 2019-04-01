@@ -13,7 +13,7 @@ int main(){
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
     pid_t pidMain=fork();
     if (pidMain==0){
-        multiprocess_handler(pillar_seed, global_data.structures_array,global_data.option.processes);
+        multiprocess_handler(pillar_seed, global_data.structures_array,global_data.option.processes,pidMain);
     }
     else{
         wait(nullptr);
