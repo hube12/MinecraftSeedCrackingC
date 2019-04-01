@@ -1,5 +1,6 @@
 #include "generator.hpp"
 #include "layers.hpp"
+#include "../Parser.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
