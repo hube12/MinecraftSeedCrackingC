@@ -59,6 +59,13 @@ Globals parse_file(std::string filename) {
     versions version_number = parse_version(field);
     std::getline(options, field, ',');
     int number_of_processes = stoi(field);
+    if (number_of_processes < 2) {
+        number_of_processes = 1;
+    } else if (number_of_processes > 8) {
+        number_of_processes = 8;
+    } else if (number_of_processes > 4) {
+        number_of_processes = 4;
+    } else { number_of_processes = 2; }
     std::getline(options, field, ',');
     int biome_size = stoi(field);
     std::getline(options, field, ',');
@@ -132,11 +139,11 @@ Globals parse_file(std::string filename) {
                 typeStruct = 's';
                 break;
         }
-        long long incompleteRand = (
-                ((chunkX < 0) ? (version_number == MC_1_13 ? (chunkX - modulus - 1) : (chunkX - (modulus - 1)))
+        long long incompleteRand =
+                ((chunkX < 0) ? ((version_number == MC_1_13) ? (chunkX - modulus - 1) : (chunkX - (modulus - 1)))
                               : chunkX) / modulus * 341873128712LL +
-                ((chunkZ < 0) ? (version_number == MC_1_13 ? (chunkX - modulus - 1) : (chunkX - (modulus - 1)))
-                              : chunkZ) / modulus * 132897987541LL + salt);
+                ((chunkZ < 0) ? ((version_number == MC_1_13) ? (chunkZ - modulus - 1) : (chunkZ - (modulus - 1)))
+                              : chunkZ) / modulus * 132897987541LL + salt;
         data.emplace_back(Structure(chunkX, chunkZ, incompleteRand, modulus, typeStruct));
     }
     //get the biomes array

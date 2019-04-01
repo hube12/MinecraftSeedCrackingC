@@ -11,7 +11,7 @@ std::vector<unsigned long long> gen(std::vector<Biomess> bio, unsigned long long
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     initBiomes();
     LayerStack g = setupGenerator(version);
-    for (unsigned int i = 0; i < (1 << 16) - 1; i++) {
+    for (unsigned int i = 0; i < (1 << 16); i++) {
         applySeed(&g, (int64_t) (((unsigned long long) i) << 48 | partial));
         int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
         bool flag = true;
@@ -29,13 +29,8 @@ std::vector<unsigned long long> gen(std::vector<Biomess> bio, unsigned long long
         free(map);
         if (flag) {
             unsigned long long seedf=((((unsigned long long) i) << 48) | partial);
-            std::cout<<(seedf & 0x7FFFFFFFFFFFFFFF)<<" "<<0x7FFFFFFFFFFFFFFF<<" "<<seedf<<std::endl;
-            if((seedf & 0x7FFFFFFFFFFFFFFF)!=0){
-                std::cout << "Final seed found : " <<(seedf -0xFFFFFFFFFFFFFFFF) << std::endl;
-            }
-            else{
-                std::cout << "Final seed found : " <<seedf<< std::endl;
-            }
+                std::cout << "Final seed found : " <<(int64_t)seedf << std::endl;
+
             final_seeds.push_back(seedf);
         }
     }

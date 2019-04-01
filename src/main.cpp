@@ -11,8 +11,29 @@ void signalHandler(int signum) {
     kill(-getgid(), SIGKILL);
 }
 
+char *inputString(FILE *fp, size_t size) {
+//The size is extended by the input with the value of the provisional
+    char *str;
+    int ch;
+    size_t len = 0;
+    str = (char *) realloc(nullptr, sizeof(char) * size);//size is start size
+    if (!str)return str;
+    while (EOF != (ch = fgetc(fp)) && ch != '\n') {
+        str[len++] = (char) ch;
+        if (len == size) {
+            str = (char *) realloc(str, sizeof(char) * (size += 16));
+            if (!str)return str;
+        }
+    }
+    str[len++] = '\0';
+
+    return (char *) realloc(str, sizeof(char) * len);
+};
+
 int main() {
-    std::string filename = "data_example.txt";
+    std::cout<<"Hello, if you have any trouble just contact me on discord: NEIL#4879"<<std::endl;
+    std::cout << "Enter the name of your file (with the .txt): ";
+    char *filename = inputString(stdin, 10);
     const Globals global_data = parse_file(filename);
     unsigned int pillar_seed = find_pillar_seed(global_data.pillars_array);
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
@@ -25,6 +46,8 @@ int main() {
         signal(SIGTERM, signalHandler);
         wait(nullptr);
         std::vector<unsigned long long> partials_seeds = assemble_logs(global_data.option.processes);
+
+        partials_seeds.push_back(281472988404919);
         for (auto el:partials_seeds) {
             std::cout << "Potential seed " << el << std::endl;
         }
@@ -36,13 +59,21 @@ int main() {
         std::ofstream save("final_seeds.txt", std::ios_base::out | std::ios::trunc);
         if (save.is_open()) {
             for (auto el:final_seeds) {
-                std::cout << "Final seeds " << ((el & 0x7FFFFFFFFFFFFFFF)!=0?el-UINT64_MAX:el) << std::endl;
-                save << ((el & 0x7FFFFFFFFFFFFFFF)!=0?el-UINT64_MAX:el) << std::endl;
+                std::cout << "Final seeds " << (int64_t)el << std::endl;
+                save <<(int64_t)el  << std::endl;
             }
         } else {
             std::cout << "save file was not loaded" << std::endl;
             throw std::runtime_error("save file was not loaded");
         }
-        return 0;
+        std::cout<<"Well done, you have your seed here in the chat and also in final_seeds.txt, enjoy!"<<std::endl;
+        std::cout<<"You can still contact me on discord: Neil#4879 if you have any issue!"<<std::endl;
+        while (true){
+            std::cout<<"Quit? (Y/N)"<<std::endl;
+            char *output = inputString(stdin, 10);
+            if (output[0]=='Y' || output[0]=='y'){
+                return 0;
+            }
+        }
     }
 }
