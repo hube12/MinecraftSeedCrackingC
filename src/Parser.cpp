@@ -79,7 +79,7 @@ Globals parse_file(std::string filename) {
 
     //get the structures array
     std::vector<Structure> data;
-    std::string sep = "-------------------------\r";
+    std::string sep = "-------------------------";
     while (std::getline(datafile, line) && sep != line) {
         std::stringstream structures(line);
         std::getline(structures, field, ',');

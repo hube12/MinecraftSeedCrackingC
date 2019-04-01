@@ -1,2 +1,7 @@
 .idea
 cmake-build-debug
+CMakeFiles
+*.cbp
+*.cmake
+CMakeCache.txt
+log_process*

@@ -1,5 +1,6 @@
 #include <chrono>
 #include <fstream>
+#include <signal.h>
 
 #include "Random.hpp"
 #include "Utils.hpp"
@@ -53,7 +54,7 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
                 file << currentSeed << std::endl;
             }
 
-            if (((i + 1) % (n_iter / 10)) == 0 && thread_id == 0) {
+            if (((i + 1) % (n_iter / 100)) == 0 && thread_id == 0) {
                 std::cout << "We are at: "
                           << ((double) (i + a[thread_id]) / (double) (unsigned long) ((1LLU << 32u) - 1)) *
                              (double) processes * 100.0;

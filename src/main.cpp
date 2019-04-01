@@ -7,7 +7,7 @@
 #include <wait.h>
 
 void signalHandler(int signum){
-    std::cout<<"received"<<signum<<"on "<<getgid()<<std::endl;
+    std::cout<<"received SIGTERM "<<signum<<" on group pid : "<<getgid()<<std::endl;
     kill(-getgid(),SIGKILL);
 }
 int main(){
