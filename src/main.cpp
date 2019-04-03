@@ -31,6 +31,7 @@ char *inputString(FILE *fp, size_t size) {
 };
 
 int main() {
+
     std::cout<<"Hello, if you have any trouble just contact me on discord: NEIL#4879"<<std::endl;
     std::cout << "Enter the name of your file (with the .txt): ";
     char *filename = inputString(stdin, 10);
@@ -47,12 +48,11 @@ int main() {
         wait(nullptr);
         std::vector<unsigned long long> partials_seeds = assemble_logs(global_data.option.processes);
 
-        partials_seeds.push_back(281472988404919);
         for (auto el:partials_seeds) {
             std::cout << "Potential seed " << el << std::endl;
         }
         if (partials_seeds.size() > 1) {
-            std::cout << "There is too much seed, let's try to reduce that number";
+            std::cout << "There is too much seed, let's try to reduce that number\n";
         }
         std::vector<unsigned long long> final_seeds = gen_handler(global_data.biome, partials_seeds,
                                                                   global_data.option.version);

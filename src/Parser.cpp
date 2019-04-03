@@ -61,16 +61,15 @@ Globals parse_file(std::string filename) {
     int number_of_processes = stoi(field);
     if (number_of_processes < 2) {
         number_of_processes = 1;
-    } else if (number_of_processes > 8) {
+    } else if (number_of_processes >= 8) {
         number_of_processes = 8;
-    } else if (number_of_processes > 4) {
+    } else if (number_of_processes >= 4) {
         number_of_processes = 4;
     } else { number_of_processes = 2; }
     std::getline(options, field, ',');
     int biome_size = stoi(field);
     std::getline(options, field, ',');
     int river_size = stoi(field);
-
     Options options_obj(version_number, number_of_processes, biome_size, river_size);
 
     //get the pillars array
@@ -87,7 +86,7 @@ Globals parse_file(std::string filename) {
     //get the structures array
     std::vector<Structure> data;
     std::string sep = "-------------------------\r";
-    while (std::getline(datafile, line) && sep != line) {
+    while (std::getline(datafile, line) && line[0]!='-' && line[1]!='-') {
         std::stringstream structures(line);
         std::getline(structures, field, ',');
         long long salt = stoll(field);
@@ -138,14 +137,20 @@ Globals parse_file(std::string filename) {
                 salt = 14357620;
                 typeStruct = 's';
                 break;
+            default:
+                typeStruct='s';
+                break;
         }
+
         long long incompleteRand =
                 ((chunkX < 0) ? ((version_number == MC_1_13) ? (chunkX - modulus - 1) : (chunkX - (modulus - 1)))
                               : chunkX) / modulus * 341873128712LL +
                 ((chunkZ < 0) ? ((version_number == MC_1_13) ? (chunkZ - modulus - 1) : (chunkZ - (modulus - 1)))
                               : chunkZ) / modulus * 132897987541LL + salt;
         data.emplace_back(Structure(chunkX, chunkZ, incompleteRand, modulus, typeStruct));
+
     }
+
     //get the biomes array
     std::vector<Biomess> biomes_obj;
     while (std::getline(datafile, line)) {
