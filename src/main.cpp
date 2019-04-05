@@ -45,7 +45,8 @@ int main() {
     } else {
         setpgid(getpid(), getpid());
         signal(SIGTERM, signalHandler);
-        wait(nullptr);
+        int status;
+        while (waitpid(0, &status, WCONTINUED)!=-1){}
         std::vector<unsigned long long> partials_seeds = assemble_logs(global_data.option.processes);
 
         for (auto el:partials_seeds) {
