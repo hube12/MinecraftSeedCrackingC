@@ -67,14 +67,27 @@ int main() {
             std::cout << "save file was not loaded" << std::endl;
             throw std::runtime_error("save file was not loaded");
         }
-        std::cout<<"Well done, you have your seed here in the chat and also in final_seeds.txt, enjoy!"<<std::endl;
-        std::cout<<"You can still contact me on discord: Neil#4879 if you have any issue!"<<std::endl;
-        while (true){
-            std::cout<<"Quit? (Y/N)"<<std::endl;
-            char *output = inputString(stdin, 10);
-            if (output[0]=='Y' || output[0]=='y'){
-                return 0;
+        if (final_seeds.size()>0){
+            std::cout<<"Well done, you have your seed here in the chat and also in final_seeds.txt, enjoy!"<<std::endl;
+            std::cout<<"You can still contact me on discord: Neil#4879 if you have any issue!"<<std::endl;
+            while (true){
+                std::cout<<"Quit? (Y/N)"<<std::endl;
+                char *output = inputString(stdin, 10);
+                if (output[0]=='Y' || output[0]=='y'){
+                    return 0;
+                }
             }
         }
+        else{
+            std::cout<<"There is a huge error, either its you or its coz you are on spigot, pls send me your data.txt on discord (NEIL#4879) and "
+                       "i will try to help you get the seed, join any log with it"<<std::endl;
+            if (partials_seeds.size()>0){
+                for (auto el:partials_seeds){
+                    std::cout<<el<<std::endl;
+                }
+                std::cout<<pillar_seed<<std::endl;
+            }
+        }
+
     }
 }
