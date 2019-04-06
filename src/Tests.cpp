@@ -104,7 +104,33 @@ void test_generation() {
     freeGenerator(g);
 }
 
+void genTestAgain(int64_t seed) {
+    const Globals global_data = parse_file("data.txt");
+    initBiomes();
+    LayerStack g = setupGenerator(global_data.option.version);
+    applySeed(&g, seed);
+    int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
+    bool flag = true;
+    int sum = 0;
+    for (Biomess el:global_data.biome) {
+        Pos pos;
+        pos.x = el.cx;
+        pos.z = el.cz;
+        genArea(&g.layers[g.layerNum - 1], map, pos.x, pos.z, 1, 1);
+        int biomeID = map[0];
+        flag = flag && (biomeID == el.id);
+
+        std::cout << biomeID << std::endl;
+        sum++;
+    }
+    free(map);
+
+}
+
+
 void tests() {
+    genTestAgain(3908375856183042513);
+    return;
     test_data("data_example.txt");
     printf("----------\n");
     test_time_machine();
