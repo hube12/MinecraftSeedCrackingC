@@ -87,6 +87,13 @@ int main() {
                 }
                 std::cout<<pillar_seed<<std::endl;
             }
+            while (true){
+                std::cout<<"Quit? (Y/N)"<<std::endl;
+                char *output = inputString(stdin, 10);
+                if (output[0]=='Y' || output[0]=='y'){
+                    return 0;
+                }
+            }
         }
 
     }
