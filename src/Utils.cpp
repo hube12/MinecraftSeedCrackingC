@@ -15,12 +15,12 @@ unsigned long long time_machine(unsigned long seed, unsigned int pillar_seed) {
                   (seed & (unsigned long long) 0xFFFF);
     currentSeed = ((currentSeed - 0xb) * 0xdfe05bcb1365) & (unsigned long long) 0xffffffffffff;
     currentSeed = ((currentSeed - 0xb) * 0xdfe05bcb1365) & (unsigned long long) 0xffffffffffff;
-    currentSeed ^= 0x5DEECE66D;
+    currentSeed ^= 0x5DEECE66DU;
     return currentSeed;
 }
 
 std::vector<Structure> *
-array_of_struct(int num_of_threads, std::vector<Structure> arrayStruct, std::vector<Structure> *a) {
+array_of_struct(int num_of_threads, const std::vector<Structure>& arrayStruct, std::vector<Structure> *a) {
     for (int i = 0; i < num_of_threads; i++) {
         for (Structure el :arrayStruct) {
             Structure s(el.chunkX, el.chunkZ, el.incompleteRand, el.modulus, el.typeStruct);

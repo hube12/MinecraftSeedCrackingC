@@ -28,7 +28,7 @@ char *inputString(FILE *fp, size_t size) {
     str[len++] = '\0';
 
     return (char *) realloc(str, sizeof(char) * len);
-};
+}
 
 int main() {
 
@@ -40,7 +40,7 @@ int main() {
     printf("Pillar seed was found and it is: %d \n", pillar_seed);
 
     std::vector<int *> pipes;
-    for (int i = 0; i < global_data.option.processes; i++) {
+    for (int i = 0; i < global_data.option->processes; i++) {
         int *fd = (int *) malloc(2 * sizeof(int));
         if (pipe(fd) == -1) {
             std::cerr << "Pipe failed" << std::endl;
@@ -52,7 +52,8 @@ int main() {
     pid_t pidMain = fork();
     if (pidMain == 0) {
         setpgid(getpid(), getppid());
-        multiprocess_handler(pillar_seed, global_data.structures_array, global_data.option.processes, getppid(), pipes);
+        multiprocess_handler(pillar_seed, global_data.structures_array, global_data.option->processes, getppid(),
+                             pipes);
     } else {
         setpgid(getpid(), getpid());
         for (auto el:pipes) {
@@ -60,55 +61,39 @@ int main() {
         }
         signal(SIGTERM, signalHandler);
         int status;
-        int blocklist[global_data.option.processes];
-        for (int i = 0; i < global_data.option.processes; i++) {
+        int blocklist[global_data.option->processes];
+        for (int i = 0; i < global_data.option->processes; i++) {
             blocklist[i] = 0;
         }
-        int flag_pipe = 0;
-       /* while (flag_pipe < global_data.option.processes) {
+        int flag_pipe=0;
+
+        while (flag_pipe<8) {
+            char progression[200];
             for (unsigned i = 0; i < pipes.size(); i++) {
                 if (!blocklist[i]) {
-
-                    char progression[200];
-                    int stat = read(pipes[i][0], progression, 100);
-                    if (stat > 0) {
-                        std::cout << progression << std::endl;
-                    } else {
-                        if (errno!=EAGAIN){
-
-                            blocklist[i] = 0;
-                            flag_pipe++;
+                    ssize_t nread = read(pipes[i][0], progression, 200);
+                    if (nread == -1) {
+                        if (errno != EAGAIN) {
+                            printf("read error\n");
+                            exit(4);
                         }
+                    } else if (nread == 0) {
+                        std::cout << "end on thread " << i << std::endl;
+                        close(pipes[i][0]);
+                        blocklist[i] = 1;
+                        flag_pipe++;
+                    } else {
+                        std::cout << progression << std::endl;
                     }
                 }
             }
-        }*/
-       while(1){
-           char progression[200];
-          int nread=read(pipes[0][0],progression,200);
-          if (nread==-1){
-              if(errno==EAGAIN){
-                  sleep(1);
-              }
-              else{
-                  printf("read error\n");
-                  exit(4);
-              }
-          }
-          else if(nread==0){
-              printf("end\n");
-              close(pipes[0][0]);
-              break;
-          }
-          else{
-              std::cout<<progression<<std::endl;
-          }
-       }
+            sleep(1);
+        }
 
         while (waitpid(0, &status, WCONTINUED) != -1) {}
 
 
-        std::vector<unsigned long long> partials_seeds = assemble_logs(global_data.option.processes);
+        std::vector<unsigned long long> partials_seeds = assemble_logs(global_data.option->processes);
 
         for (auto el:partials_seeds) {
             std::cout << "Potential seed " << el << std::endl;
@@ -117,7 +102,7 @@ int main() {
             std::cout << "There is too much seed, let's try to reduce that number\n";
         }
         std::vector<unsigned long long> final_seeds = gen_handler(global_data.biome, partials_seeds,
-                                                                  global_data.option.version);
+                                                                  global_data.option->version);
         std::ofstream save("final_seeds.txt", std::ios_base::out | std::ios::trunc);
         if (save.is_open()) {
             for (auto el:final_seeds) {

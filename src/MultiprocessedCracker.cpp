@@ -5,8 +5,8 @@
 #include <fstream>
 
 void
-multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes, pid_t pidMain,
-                     std::vector<int*> pipes) {
+multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int &processes, pid_t pidMain,
+                     std::vector<int*>& pipes) {
     std::vector<pid_t> pids;
     switch (processes) {
         case 2: {
@@ -35,7 +35,7 @@ multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure> &arr
         }
     }
     setpgid(getpid(), pidMain);
-    multiprocess_structure(pillar_seed, arrayStruct, processes, pids, pidMain, pipes);
+    multiprocess_structure(pillar_seed, arrayStruct, processes, pids, pidMain, std::move(pipes));
     exit(0);
 }
 
@@ -44,13 +44,13 @@ void multiprocess_structure(unsigned int pillar_seed, const std::vector<Structur
 
     static const int num_of_process = processes;
     unsigned long a[num_of_process];
-    unsigned long iota = (unsigned long) ((1LLU << 32u) - 1) / num_of_process/32;
+    unsigned long iota = (unsigned long) ((1LLU << 32u) - 1) / num_of_process;
     std::vector<Structure> a_struct[num_of_process];
     array_of_struct(num_of_process, arrayStruct, a_struct);
     for (int i = 0; i < num_of_process; i++) {
         a[i] = iota * i;
     }
-    structure_seed_single(a, iota, return_id(pids), pillar_seed, a_struct, processes, pidMain, pipes);
+    structure_seed_single(a, iota, return_id(pids), pillar_seed, a_struct, processes, pidMain, std::move(pipes));
 }
 
 std::vector<unsigned long long> assemble_logs(int processes) {

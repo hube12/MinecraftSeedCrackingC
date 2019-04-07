@@ -1,7 +1,7 @@
 #ifndef JAVARND_H_
 #define JAVARND_H_
 
-#include <stdint.h>
+#include <cstdint>
 
 
 /********************** C copy of the Java Random methods **********************

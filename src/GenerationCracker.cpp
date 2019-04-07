@@ -5,14 +5,14 @@
 #include "GenerationCracker.hpp"
 #include "generationByCubitect/generator.hpp"
 
-std::vector<unsigned long long> gen(std::vector<Biomess> bio, unsigned long long partial, versions version) {
+std::vector<unsigned long long> gen(const std::vector<Biomess>&bio, unsigned long long partial, versions version) {
     std::vector<unsigned long long> final_seeds;
 
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     initBiomes();
     LayerStack g = setupGenerator(version);
-    for (unsigned int i = 0; i < (1 << 16); i++) {
-        applySeed(&g, (int64_t) (((unsigned long long) i) << 48 | partial));
+    for (unsigned int i = 0; i < (1U << 16u); i++) {
+        applySeed(&g, (int64_t) (((unsigned long long) i) << 48u | partial));
         int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
         bool flag = true;
         for (Biomess el:bio) {
@@ -28,7 +28,7 @@ std::vector<unsigned long long> gen(std::vector<Biomess> bio, unsigned long long
         }
         free(map);
         if (flag) {
-            unsigned long long seedf=((((unsigned long long) i) << 48) | partial);
+            unsigned long long seedf=((((unsigned long long) i) << 48u) | partial);
                 std::cout << "Final seed found : " <<(int64_t)seedf << std::endl;
 
             final_seeds.push_back(seedf);
@@ -42,7 +42,7 @@ std::vector<unsigned long long> gen(std::vector<Biomess> bio, unsigned long long
 }
 
 std::vector<unsigned long long>
-gen_handler(std::vector<Biomess> bio, std::vector<unsigned long long> partials, versions version) {
+gen_handler(const std::vector<Biomess>& bio, const std::vector<unsigned long long>& partials, versions version) {
     std::vector<unsigned long long> finals_seeds;
     for (auto el:partials) {
         std::vector<unsigned long long> tempo = gen(bio, el, version);

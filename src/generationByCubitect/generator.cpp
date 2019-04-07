@@ -2,9 +2,9 @@
 #include "layers.hpp"
 #include "../Parser.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 
 void setupLayer(int scale, Layer *l, Layer *p, int s, void (*getMap)(Layer *layer, int *out, long long x, long long z, int w, int h))

@@ -3,7 +3,7 @@
 #include <sstream>
 
 constexpr unsigned int str2int(const char *str, int h = 0) {
-    return !str[h] ? 5381 : (str2int(str, h + 1) * 33) ^ str[h];
+    return !str[h] ? 5381 : (str2int(str, h + 1) * 33) ^ (unsigned int )(str[h]);
 }
 
 versions parse_version(std::string &s) {
@@ -43,7 +43,7 @@ versions parse_version(std::string &s) {
     return v;
 }
 
-Globals parse_file(std::string filename) {
+Globals parse_file(const std::string& filename) {
     std::string line, field;
 
     std::ifstream datafile(filename, std::ios::in);
@@ -70,7 +70,7 @@ Globals parse_file(std::string filename) {
     int biome_size = stoi(field);
     std::getline(options, field, ',');
     int river_size = stoi(field);
-    Options options_obj(version_number, number_of_processes, biome_size, river_size);
+    auto* options_obj=new Options(version_number, number_of_processes, biome_size, river_size);
 
     //get the pillars array
     std::getline(datafile, line);

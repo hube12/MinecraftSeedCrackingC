@@ -42,6 +42,6 @@ public:
     }
 
     float nextFloat() {
-        return next(24) / (float) (1 << 24);
+        return next(24) / (float) (1LLU << 24u);
     }
 };

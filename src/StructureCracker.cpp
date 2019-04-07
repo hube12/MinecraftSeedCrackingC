@@ -1,6 +1,6 @@
 #include <chrono>
 #include <fstream>
-#include <signal.h>
+#include <csignal>
 
 #include "Random.hpp"
 #include "Utils.hpp"
@@ -10,7 +10,7 @@
 bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Structure> arrayStruct) {
     Structure el = arrayStruct[index];
     auto r = Random(currentSeed + el.incompleteRand);
-    long signed k, m;
+    long signed k=-1, m=-1;
     switch (el.typeStruct) {
         case 's': //old structures: igloo, witch hut, desert temple, jungle temple, village
             k = r.nextInt(24);
@@ -47,6 +47,8 @@ bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Stru
                 return can_it_be_there(currentSeed, index + 1, arrayStruct);
             }
             return false;
+        default:
+            std::cerr<<"Wow that's a parser mistake pls enter in contact with your local helper: NEIL#4879"<<std::endl;
     }
 
     if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k &&
@@ -80,14 +82,13 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
                 file << currentSeed << std::endl;
             }
 
-            if (((i + 1) % (n_iter / 100)) == 0 && thread_id == 0) {
+            if (((i + 1) % (n_iter / 100)) == 0) {
                 std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
                         t2 - t1);
-                std::string percentage=std::to_string(((double) (i + a[thread_id]) / (double) (unsigned long) ((1LLU << 32u) - 1)) *
-                                  (double) processes * 100.0);
-                std::string current_status="We are at: " + percentage+"% and it took me "+std::to_string(time_span.count())+" seconds." + std::to_string(thread_id);
-                write(pipes[thread_id][1],current_status.c_str(),current_status.size());
+                std::string percentage=std::to_string(((double)i/(double)n_iter)*100.0);
+                std::string current_status="We are on thread  "+ std::to_string(thread_id)+ " at: "+ percentage+"% and it took me "+std::to_string(time_span.count())+" seconds." ;
+                write(pipes[thread_id][1],current_status.c_str(),current_status.size()+1);
             }
         }
         file.close();

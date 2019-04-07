@@ -3,9 +3,9 @@
 
 #include "javarnd.h"
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <cstdlib>
+#include <cstdint>
+#include <cinttypes>
 
 
 #if defined USE_SIMD && __AVX2__
@@ -236,7 +236,7 @@ static inline void setBaseSeed(Layer *layer, int64_t seed)
     layer->baseSeed *= layer->baseSeed * 6364136223846793005LL + 1442695040888963407LL;
     layer->baseSeed += seed;
 
-    layer->p = NULL;
+    layer->p = nullptr;
     layer->worldSeed = 0;
     layer->chunkSeed = 0;
 }

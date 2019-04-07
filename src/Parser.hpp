@@ -36,18 +36,17 @@ public:
 
 class Options {
 public:
-    Options(versions version, int processes, int biome, int river) {
+    explicit Options(versions version, int processes, int biome, int river) {
         this->version = version;
         this->processes = processes;
         this->biome = biome;
         this->river = river;
     }
 
-    Options() {};
     versions version;
-    int processes;
-    int biome;
-    int river;
+    int processes{};
+    int biome{};
+    int river{};
 };
 
 class Biomess {
@@ -65,25 +64,25 @@ public:
 
 class Globals {
 public:
+    Options *option;
+    std::vector<Biomess> biome;
+    const int *pillars_array;
+    std::vector<Structure> structures_array;
+
     explicit Globals(const int *pillars_array, std::vector<Structure> structures_array,
-                     Options option,
+                     Options *option,
                      std::vector<Biomess> biomes) {
         this->pillars_array = pillars_array;
         this->structures_array = move(structures_array);
         this->biome = move(biomes);
         this->option = option;
     }
-
-    Options option;
-    std::vector<Biomess> biome;
-    const int *pillars_array;
-    std::vector<Structure> structures_array;
 };
 
 typedef struct Pos {
     long long x, z;
 } Pos;
 
-Globals parse_file(std::string filename);
+Globals parse_file(const std::string &filename);
 
 versions parse_version(std::string &s);

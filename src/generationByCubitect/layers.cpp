@@ -1,7 +1,7 @@
 #include "layers.hpp"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 
 
 static void oceanRndInit(OceanRnd *rnd, int64_t seed);

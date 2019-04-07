@@ -6,8 +6,8 @@
 #include "Parser.hpp"
 
 void
-multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes, pid_t pidMain,
-                     std::vector<int*> pipes);
+multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int &processes, pid_t pidMain,
+                     std::vector<int*> &pipes);
 
 void multiprocess_structure(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes,
                             std::vector<pid_t> pids, pid_t pidMain, std::vector<int*> pipes);

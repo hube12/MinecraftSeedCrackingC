@@ -1,9 +1,9 @@
 #include <iostream>
-#include <assert.h>
+#include <cassert>
 #include <sstream>
 #include <cmath>
 #include <chrono>
-
+#include <utility>
 #include "PillarsCracker.hpp"
 #include "Parser.hpp"
 #include "Utils.hpp"
@@ -11,7 +11,7 @@
 #include "GenerationCracker.hpp"
 #include "generationByCubitect/generator.hpp"
 
-void test_data(std::string filename) {
+void test_data(const std::string& filename) {
     const Globals global_data = parse_file(filename);
     assert (global_data.pillars_array != nullptr);
     for (Biomess el:global_data.biome) {
@@ -76,13 +76,13 @@ void test_pillars() {
 
 void test_gen() {
     const Globals global_data = parse_file("data_example.txt");
-    gen(global_data.biome, 123, global_data.option.version);
+    gen(global_data.biome, 123, global_data.option->version);
 }
 
 void test_generation() {
     const Globals global_data = parse_file("data_example.txt");
     initBiomes();
-    LayerStack g = setupGenerator(global_data.option.version);
+    LayerStack g = setupGenerator(global_data.option->version);
     applySeed(&g, 123);
     int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
     bool flag = true;
@@ -107,7 +107,7 @@ void test_generation() {
 void genTestAgain(int64_t seed) {
     const Globals global_data = parse_file("data.txt");
     initBiomes();
-    LayerStack g = setupGenerator(global_data.option.version);
+    LayerStack g = setupGenerator(global_data.option->version);
     applySeed(&g, seed);
     int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
     bool flag = true;
