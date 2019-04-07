@@ -4,7 +4,9 @@
 
 #include <fstream>
 
-void multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes, pid_t pidMain) {
+void
+multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes, pid_t pidMain,
+                     std::vector<int*> pipes) {
     std::vector<pid_t> pids;
     switch (processes) {
         case 2: {
@@ -32,23 +34,23 @@ void multiprocess_handler(unsigned int pillar_seed, const std::vector<Structure>
             processes = 1;
         }
     }
-    setpgid(getpid(),pidMain);
-    multiprocess_structure(pillar_seed, arrayStruct, processes, pids,pidMain);
+    setpgid(getpid(), pidMain);
+    multiprocess_structure(pillar_seed, arrayStruct, processes, pids, pidMain, pipes);
     exit(0);
 }
 
 void multiprocess_structure(unsigned int pillar_seed, const std::vector<Structure> &arrayStruct, int processes,
-                            std::vector<pid_t> pids, pid_t pidMain) {
+                            std::vector<pid_t> pids, pid_t pidMain, std::vector<int*> pipes) {
 
     static const int num_of_process = processes;
     unsigned long a[num_of_process];
-    unsigned long iota = (unsigned long) ((1LLU << 32u) - 1) / num_of_process;
+    unsigned long iota = (unsigned long) ((1LLU << 32u) - 1) / num_of_process/32;
     std::vector<Structure> a_struct[num_of_process];
     array_of_struct(num_of_process, arrayStruct, a_struct);
     for (int i = 0; i < num_of_process; i++) {
         a[i] = iota * i;
     }
-    structure_seed_single(a, iota, return_id(pids), pillar_seed, a_struct, processes,pidMain);
+    structure_seed_single(a, iota, return_id(pids), pillar_seed, a_struct, processes, pidMain, pipes);
 }
 
 std::vector<unsigned long long> assemble_logs(int processes) {
@@ -61,13 +63,16 @@ std::vector<unsigned long long> assemble_logs(int processes) {
             if (partial_log.is_open()) {
                 std::string line;
                 while (std::getline(partial_log, line)) {
-                    log<<line<<std::endl;
+                    log << line << std::endl;
                     partials_possible_seed.push_back(std::stoull(line));
                 }
                 partial_log.close();
                 std::remove(("log_process" + std::to_string(thread_id)).c_str());
                 bool failed = !std::ifstream("log_process" + std::to_string(thread_id));
-                if (!failed) { std::perror("Error deleting file"); std::cout<<"Error deleting file"<<std::endl;}
+                if (!failed) {
+                    std::perror("Error deleting file");
+                    std::cout << "Error deleting file" << std::endl;
+                }
 
             } else {
                 throw std::runtime_error("log file was not loaded: " + std::to_string(thread_id));
@@ -77,6 +82,6 @@ std::vector<unsigned long long> assemble_logs(int processes) {
     } else {
         throw std::runtime_error("Log main file was not loaded:");
     }
-    std::cout<<"Log file was recompiled"<<std::endl;
+    std::cout << "Log file was recompiled" << std::endl;
     return partials_possible_seed;
 }

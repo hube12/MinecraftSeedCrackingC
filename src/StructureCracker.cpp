@@ -63,7 +63,8 @@ bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Stru
 }
 
 void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, unsigned int pillar_seed,
-                           const std::vector<Structure> *arrayStruct, int processes, pid_t pidMain) {
+                           const std::vector<Structure> *arrayStruct, int processes, pid_t pidMain,std::vector<int*> pipes) {
+    close(pipes[thread_id][0]); //close reading end
     std::ofstream file;
     file.open("log_process" + std::to_string(thread_id), std::ios::out | std::ios::trunc);
     if (file.is_open()) {
@@ -80,16 +81,17 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
             }
 
             if (((i + 1) % (n_iter / 100)) == 0 && thread_id == 0) {
-                std::cout << "We are at: "
-                          << ((double) (i + a[thread_id]) / (double) (unsigned long) ((1LLU << 32u) - 1)) *
-                             (double) processes * 100.0;
                 std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
                         t2 - t1);
-                std::cout << "% and it took me " << time_span.count() << " seconds." << std::endl;
+                std::string percentage=std::to_string(((double) (i + a[thread_id]) / (double) (unsigned long) ((1LLU << 32u) - 1)) *
+                                  (double) processes * 100.0);
+                std::string current_status="We are at: " + percentage+"% and it took me "+std::to_string(time_span.count())+" seconds." + std::to_string(thread_id);
+                write(pipes[thread_id][1],current_status.c_str(),current_status.size());
             }
         }
         file.close();
+        close(pipes[thread_id][1]); //close writing end
     } else {
         throw std::runtime_error("log file was not loaded: " + std::to_string(thread_id));
     }
