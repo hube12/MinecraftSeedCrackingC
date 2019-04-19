@@ -6,5 +6,5 @@ add_executable(Test Random.hpp Parser.cpp Utils.cpp PillarsCracker.cpp Structure
 
 #add_executable(MultiprocessedCracker Utils.cpp StructureCracker.cpp MultiprocessedCracker.cpp)
 #add_executable(ThreadedCracker Utils.cpp StructureCracker.cpp ThreadedCracker.cpp)
-
+add_executable(tt Random.hpp Parser.cpp test.cc)
 add_executable(SeedCrackerByNeil2.0 Random.hpp Parser.cpp Utils.cpp PillarsCracker.cpp StructureCracker.cpp GenerationCracker.cpp generationByCubitect/generator.cpp generationByCubitect/layers.cpp StructureCracker.cpp MultiprocessedCracker.cpp main.cpp)

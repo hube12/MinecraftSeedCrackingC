@@ -82,7 +82,7 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
                 file << currentSeed << std::endl;
             }
 
-            if (((i + 1) % (n_iter / 100)) == 0) {
+            if (((i + 1) % (n_iter / 100)) == 0 && thread_id==0) {
                 std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
                         t2 - t1);

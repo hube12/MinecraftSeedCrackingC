@@ -1,4 +1,4 @@
-#include <iostream>
+
 #include <cassert>
 #include <sstream>
 #include <cmath>
@@ -10,8 +10,9 @@
 #include "StructureCracker.hpp"
 #include "GenerationCracker.hpp"
 #include "generationByCubitect/generator.hpp"
+#include "Random.hpp"
 
-void test_data(const std::string& filename) {
+void test_data(const std::string &filename) {
     const Globals global_data = parse_file(filename);
     assert (global_data.pillars_array != nullptr);
     for (Biomess el:global_data.biome) {
@@ -127,9 +128,98 @@ void genTestAgain(int64_t seed) {
 
 }
 
+void genDebug(int64_t partial) {
+    std::vector<unsigned long long> final_seeds;
+    const Globals global_data = parse_file("data.txt");
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    initBiomes();
+    LayerStack g = setupGenerator(global_data.option->version);
+    for (unsigned int i = 0; i < (1U << 16u); i++) {
+        applySeed(&g, (int64_t) (((unsigned long long) i) << 48u | partial));
+        int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
+        int sum = 0;
+        for (Biomess el:global_data.biome) {
+            Pos pos;
+            pos.x = el.cx;
+            pos.z = el.cz;
+            genArea(&g.layers[g.layerNum - 1], map, pos.x, pos.z, 1, 1);
+            int biomeID = map[0];
+            if (biomeID == el.id) {
+                sum++;
+            }
+        }
+        free(map);
+        if (sum > 3) {
+            unsigned long long seedf = ((((unsigned long long) i) << 48u) | partial);
+            std::cout << "Final seed found : " << (int64_t) seedf << " " << sum << std::endl;
+
+            final_seeds.push_back(seedf);
+        }
+    }
+    std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+    std::cout << "It took me " << time_span.count() << " seconds for the seed : " << partial << std::endl;
+    freeGenerator(g);
+
+
+}
+
+void structureTest() {
+    const Globals global_data = parse_file("data.txt");
+    int64_t seed = (-930953330566209700 & 0xFFFFFFFFFFFFD);
+    int sum = 0;
+    for (auto el:global_data.structures_array) {
+        auto r = Random(seed + el.incompleteRand);
+        long signed k = -1, m = -1;
+        switch (el.typeStruct) {
+            case 's': //old structures: igloo, witch hut, desert temple, jungle temple, village
+                k = r.nextInt(24);
+                m = r.nextInt(24);
+                break;
+            case 'e': //end cities
+                k = (r.nextInt(9) + r.nextInt(9)) / 2;
+                m = (r.nextInt(9) + r.nextInt(9)) / 2;
+                break;
+            case 'o': //ocean monuments
+                k = (r.nextInt(27) + r.nextInt(27)) / 2;
+                m = (r.nextInt(27) + r.nextInt(27)) / 2;
+                break;
+            case 'm': //mansions
+                k = (r.nextInt(60) + r.nextInt(60)) / 2;
+                m = (r.nextInt(60) + r.nextInt(60)) / 2;
+                break;
+            case 'r': //ruins
+                k = (r.nextInt(8) + r.nextInt(8)) / 2;
+                m = (r.nextInt(8) + r.nextInt(8)) / 2;
+                break;
+            case 'w': //shipwreck
+                k = (r.nextInt(8) + r.nextInt(8)) / 2;
+                m = (r.nextInt(8) + r.nextInt(8)) / 2;
+                break;
+            case 't': //treasures
+                if (r.nextFloat() < 0.01) {
+                    sum += 1;
+                    std::cout << el.chunkX << el.typeStruct << std::endl;
+                }
+            default:
+                std::cerr << "Wow that's a parser mistake pls enter in contact with your local helper: NEIL#4879" << std::endl;
+                break;
+        }
+        if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k && m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus)) {
+            sum += 1;
+            std::cout << el.chunkX << el.typeStruct << std::endl;
+        }
+
+    }
+
+    std::cout<<sum<<std::endl;
+}
 
 void tests() {
-    genTestAgain(3908375856183042513);
+    return;
+    std::cout << "hey" << std::endl;
+    genTestAgain((int64_t) 22736);
+    genDebug((int64_t) 22736);
     return;
     test_data("data_example.txt");
     printf("----------\n");
