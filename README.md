@@ -1,3 +1,7 @@
+To download the tool go in release: https://github.com/hube12/MinecraftSeedCrackingC/releases/download/2.0/SeedCracking.zip 
+
+
+
 Hello,
 
 If you need that tools, its mostly because you want the world seed of your world
