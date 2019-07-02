@@ -4,6 +4,7 @@
 #include <cmath>
 #include <chrono>
 #include <utility>
+#include <wait.h>
 #include "PillarsCracker.hpp"
 #include "Parser.hpp"
 #include "Utils.hpp"
@@ -11,6 +12,10 @@
 #include "GenerationCracker.hpp"
 #include "generationByCubitect/generator.hpp"
 #include "Random.hpp"
+
+#include "MultiprocessedCracker.hpp"
+
+#include <fstream>
 
 void test_data(const std::string &filename) {
     const Globals global_data = parse_file(filename);
@@ -106,7 +111,7 @@ void test_generation() {
 }
 
 void genTestAgain(int64_t seed) {
-    const Globals global_data = parse_file("data.txt");
+    const Globals global_data = parse_file("data5.txt");
     initBiomes();
     LayerStack g = setupGenerator(global_data.option->version);
     applySeed(&g, seed);
@@ -121,7 +126,7 @@ void genTestAgain(int64_t seed) {
         int biomeID = map[0];
         flag = flag && (biomeID == el.id);
 
-        std::cout << biomeID << std::endl;
+        std::cout << biomeID << " "<<el.cx<<std::endl;
         sum++;
     }
     free(map);
@@ -130,7 +135,7 @@ void genTestAgain(int64_t seed) {
 
 void genDebug(int64_t partial) {
     std::vector<unsigned long long> final_seeds;
-    const Globals global_data = parse_file("data.txt");
+    const Globals global_data = parse_file("datq.txt");
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     initBiomes();
     LayerStack g = setupGenerator(global_data.option->version);
@@ -149,9 +154,9 @@ void genDebug(int64_t partial) {
             }
         }
         free(map);
-        if (sum > 3) {
+        if (sum > 2) {
             unsigned long long seedf = ((((unsigned long long) i) << 48u) | partial);
-            std::cout << "Final seed found : " << (int64_t) seedf << " " << sum << std::endl;
+            std::cout << "Final seed found : " << (int64_t) seedf << " " << sum <<" "<<partial<< std::endl;
 
             final_seeds.push_back(seedf);
         }
@@ -164,13 +169,14 @@ void genDebug(int64_t partial) {
 
 }
 
-void structureTest() {
-    const Globals global_data = parse_file("data.txt");
-    int64_t seed = (-930953330566209700 & 0xFFFFFFFFFFFFD);
+void structureTest(int64_t seed) {
+    const Globals global_data = parse_file("data5.txt");
     int sum = 0;
     for (auto el:global_data.structures_array) {
+    	bool flag= false;
         auto r = Random(seed + el.incompleteRand);
         long signed k = -1, m = -1;
+        //std::cout<<el.incompleteRand<<" "<<el.modulus<<std::endl;
         switch (el.typeStruct) {
             case 's': //old structures: igloo, witch hut, desert temple, jungle temple, village
                 k = r.nextInt(24);
@@ -193,21 +199,30 @@ void structureTest() {
                 m = (r.nextInt(8) + r.nextInt(8)) / 2;
                 break;
             case 'w': //shipwreck
-                k = (r.nextInt(8) + r.nextInt(8)) / 2;
-                m = (r.nextInt(8) + r.nextInt(8)) / 2;
+                k =r.nextInt(8);
+                m = r.nextInt(8);
                 break;
             case 't': //treasures
                 if (r.nextFloat() < 0.01) {
                     sum += 1;
-                    std::cout << el.chunkX << el.typeStruct << std::endl;
+                    //std::cout << el.chunkX << el.typeStruct << std::endl;
+					std::cout << "false"<< std::endl;
+                    flag=true;
                 }
+				break;
             default:
                 std::cerr << "Wow that's a parser mistake pls enter in contact with your local helper: NEIL#4879" << std::endl;
                 break;
         }
-        if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k && m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus)) {
+        if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k && m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus) && el.typeStruct!='t') {
             sum += 1;
-            std::cout << el.chunkX << el.typeStruct << std::endl;
+            //std::cout << el.chunkX << el.typeStruct << std::endl;
+			std::cout << "true"<< std::endl;
+        }
+        else{
+        	if (!flag){
+				std::cout << "false"<< std::endl;
+        	}
         }
 
     }
@@ -215,7 +230,19 @@ void structureTest() {
     std::cout<<sum<<std::endl;
 }
 
+
+
+
 void tests() {
+    int status;
+    pid_t pid=fork();
+    if (pid){
+        genDebug(118396006891933);
+    }
+    else{
+        genDebug(119040251986333);
+        wait(&status);
+    }
     return;
     std::cout << "hey" << std::endl;
     genTestAgain((int64_t) 22736);
@@ -237,6 +264,17 @@ void tests() {
 
 
 int main() {
-    tests();
+    //genDebug(132013311129977);
+    structureTest(-6981389975355808015);
+    genTestAgain(-6981389975355808015);
+    //genTestAgain(8453669988862261625);
     return 0;
 }
+/*Final seed found : -6336310450994062231 3 254224716225641
+Final seed found : -5093598428816515991 3 254224716225641
+Final seed found : -5080650579887825815 3 254224716225641
+Final seed found : -3821613009061061527 3 254224716225641
+Final seed found : -1495785276500910999 3 254224716225641
+Final seed found : -732425139661611927 3 254224716225641
+Final seed found : -266021103252054935 3 254224716225641
+It took me 83.5724 seconds for the seed : 254224716225641*/

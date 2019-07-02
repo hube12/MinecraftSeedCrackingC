@@ -11,6 +11,7 @@ bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Stru
     Structure el = arrayStruct[index];
     auto r = Random(currentSeed + el.incompleteRand);
     long signed k=-1, m=-1;
+
     switch (el.typeStruct) {
         case 's': //old structures: igloo, witch hut, desert temple, jungle temple, village
             k = r.nextInt(24);
@@ -33,8 +34,8 @@ bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Stru
             m = (r.nextInt(8) + r.nextInt(8)) / 2;
             break;
         case 'w': //shipwreck
-            k = (r.nextInt(8) + r.nextInt(8)) / 2;
-            m = (r.nextInt(8) + r.nextInt(8)) / 2;
+			k = r.nextInt(8) ;
+			m = r.nextInt(8);
             break;
         case 't': //treasures
             if (r.nextFloat() < 0.01) {
@@ -44,7 +45,7 @@ bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Stru
                 if (index == (int) arrayStruct.size() - 1) {
                     return true;
                 }
-                return can_it_be_there(currentSeed, index + 1, arrayStruct);
+                can_it_be_there(currentSeed, index + 1, arrayStruct);
             }
             return false;
         default:
@@ -64,6 +65,69 @@ bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Stru
     return false;
 }
 
+
+
+bool can_it_be_thereDEBUG(unsigned long long currentSeed, std::vector<Structure> arrayStruct) {
+    int sum=0;
+    for (Structure el:arrayStruct){
+        auto r = Random(currentSeed + el.incompleteRand);
+        long signed k=-1, m=-1;
+
+        switch (el.typeStruct) {
+            case 's': //old structures: igloo, witch hut, desert temple, jungle temple, village
+                k = r.nextInt(24);
+                m = r.nextInt(24);
+                break;
+            case 'e': //end cities
+                k = (r.nextInt(9) + r.nextInt(9)) / 2;
+                m = (r.nextInt(9) + r.nextInt(9)) / 2;
+                break;
+            case 'o': //ocean monuments
+                k = (r.nextInt(27) + r.nextInt(27)) / 2;
+                m = (r.nextInt(27) + r.nextInt(27)) / 2;
+                break;
+            case 'm': //mansions
+                k = (r.nextInt(60) + r.nextInt(60)) / 2;
+                m = (r.nextInt(60) + r.nextInt(60)) / 2;
+                break;
+            case 'r': //ruins
+                k = (r.nextInt(8) + r.nextInt(8)) / 2;
+                m = (r.nextInt(8) + r.nextInt(8)) / 2;
+                break;
+            case 'w': //shipwreck
+                k = r.nextInt(8) ;
+                m = r.nextInt(8);
+                break;
+            case 't': //treasures
+                if (r.nextFloat() < 0.01) {
+                    if (sum > 2) {
+                        printf("Good seed: %llu %d\n", currentSeed,sum);
+                    }
+                    if (sum == (int) arrayStruct.size() - 1) {
+                        return true;
+                    }
+                    sum++;
+                }
+				break;
+            default:
+                std::cerr<<"Wow that's a parser mistake pls enter in contact with your local helper: NEIL#4879"<<std::endl;
+        }
+
+        if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k &&
+            m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus) && el.typeStruct!='t') {
+            if (sum > 2) {
+                printf("Good seed: %llu %d\n", currentSeed,sum);
+            }
+            if (sum == (int) arrayStruct.size() - 1) {
+                return true;
+            }
+            sum++;
+        }
+    }
+    return false;
+
+}
+
 void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id, unsigned int pillar_seed,
                            const std::vector<Structure> *arrayStruct, int processes, pid_t pidMain,std::vector<int*> pipes) {
     close(pipes[thread_id][0]); //close reading end
@@ -77,7 +141,7 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
                 exit(0);
             }
             unsigned long long currentSeed = time_machine(i + a[thread_id], pillar_seed);
-            if (can_it_be_there(currentSeed, 0, arrayStruct[thread_id])) {
+            if (can_it_be_thereDEBUG(currentSeed, arrayStruct[thread_id])) {
                 printf("Partial seed found: %llu\n", currentSeed);
                 file << currentSeed << std::endl;
             }

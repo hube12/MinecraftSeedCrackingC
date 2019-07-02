@@ -30,7 +30,7 @@ bool match_pillars(unsigned int seed, const int *pillar_liste) {
 }
 
 unsigned int find_pillar_seed(const int *liste) {
-    for (unsigned int i = 0; i <= UINT16_MAX; i++) {
+    for (unsigned int i = 0; i <= 3628800 ; i++) {
         if (match_pillars(i, liste)) {
             return i;
         }
