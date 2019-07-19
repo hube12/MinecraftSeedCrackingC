@@ -111,7 +111,7 @@ void test_generation() {
 }
 
 void genTestAgain(int64_t seed) {
-    const Globals global_data = parse_file("data5.txt");
+    const Globals global_data = parse_file("data.txt");
     initBiomes();
     LayerStack g = setupGenerator(global_data.option->version);
     applySeed(&g, seed);
@@ -126,16 +126,17 @@ void genTestAgain(int64_t seed) {
         int biomeID = map[0];
         flag = flag && (biomeID == el.id);
 
-        std::cout << biomeID << " "<<el.cx<<std::endl;
+        std::cout << (biomeID == el.id ? "true" : "false") << " ";
         sum++;
     }
     free(map);
+    std::cout << std::endl;
 
 }
 
 void genDebug(int64_t partial) {
     std::vector<unsigned long long> final_seeds;
-    const Globals global_data = parse_file("datq.txt");
+    const Globals global_data = parse_file("data.txt");
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     initBiomes();
     LayerStack g = setupGenerator(global_data.option->version);
@@ -152,14 +153,16 @@ void genDebug(int64_t partial) {
             if (biomeID == el.id) {
                 sum++;
             }
+
         }
         free(map);
-        if (sum > 2) {
+        if (sum > 3) {
             unsigned long long seedf = ((((unsigned long long) i) << 48u) | partial);
-            std::cout << "Final seed found : " << (int64_t) seedf << " " << sum <<" "<<partial<< std::endl;
+            std::cout << "Final seed found : " << (int64_t) seedf << " " << sum << " " << partial << std::endl;
 
             final_seeds.push_back(seedf);
         }
+
     }
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
@@ -170,10 +173,10 @@ void genDebug(int64_t partial) {
 }
 
 void structureTest(int64_t seed) {
-    const Globals global_data = parse_file("data5.txt");
+    const Globals global_data = parse_file("data.txt");
     int sum = 0;
     for (auto el:global_data.structures_array) {
-    	bool flag= false;
+        bool flag = false;
         auto r = Random(seed + el.incompleteRand);
         long signed k = -1, m = -1;
         //std::cout<<el.incompleteRand<<" "<<el.modulus<<std::endl;
@@ -199,47 +202,45 @@ void structureTest(int64_t seed) {
                 m = (r.nextInt(8) + r.nextInt(8)) / 2;
                 break;
             case 'w': //shipwreck
-                k =r.nextInt(8);
+                k = r.nextInt(8);
                 m = r.nextInt(8);
                 break;
             case 't': //treasures
                 if (r.nextFloat() < 0.01) {
                     sum += 1;
                     //std::cout << el.chunkX << el.typeStruct << std::endl;
-					std::cout << "false"<< std::endl;
-                    flag=true;
+                    std::cout << "true ";
+                    flag = true;
                 }
-				break;
+                break;
             default:
-                std::cerr << "Wow that's a parser mistake pls enter in contact with your local helper: NEIL#4879" << std::endl;
+                std::cerr << "Wow that's a parser mistake pls enter in contact with your local helper: NEIL#4879"
+                          << std::endl;
                 break;
         }
-        if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k && m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus) && el.typeStruct!='t') {
+        if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k &&
+            m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus) && el.typeStruct != 't') {
             sum += 1;
             //std::cout << el.chunkX << el.typeStruct << std::endl;
-			std::cout << "true"<< std::endl;
-        }
-        else{
-        	if (!flag){
-				std::cout << "false"<< std::endl;
-        	}
+            std::cout << "true ";
+        } else {
+            if (!flag) {
+                std::cout << "false ";
+            }
         }
 
     }
 
-    std::cout<<sum<<std::endl;
+    std::cout << sum << std::endl;
 }
-
-
 
 
 void tests() {
     int status;
-    pid_t pid=fork();
-    if (pid){
+    pid_t pid = fork();
+    if (pid) {
         genDebug(118396006891933);
-    }
-    else{
+    } else {
         genDebug(119040251986333);
         wait(&status);
     }
@@ -262,19 +263,58 @@ void tests() {
     printf("----------\n");
 }
 
+#include "generationByCubitect/finders.hpp"
+
+
+void testSpawnVillager() {
+    initBiomes();
+    LayerStack g = setupGenerator(MC_1_14);
+    int modulus = 32;
+    int salt = 10387312;
+    Pos chunk;
+    int *map = allocCache(&g.layers[g.layerNum - 1], 256, 256);
+    for (int64_t seed = 2000000000000; seed < 200000000000000000; seed++) {
+        int64_t seedCopy = seed;
+        applySeed(&g, (int64_t) seed);
+
+        Pos pos = getSpawn(MC_1_14, &g, map, seedCopy);
+        chunk.x = (pos.x - 9) >> 4;
+        chunk.z = (pos.z - 9) >> 4;
+        chunk.x = chunk.x < 0 ? chunk.x - modulus + 1 : chunk.x;
+        chunk.z = chunk.z < 0 ? chunk.z - modulus + 1 : chunk.z;
+        auto r = Random(seed + chunk.x * 341873128712L + chunk.z * 132897987541L + seedCopy + salt);
+        long k = r.nextInt(24);
+        long m = r.nextInt(24);
+        if ((((chunk.x % modulus) + modulus) % modulus) == k && m == (((chunk.z % modulus) + modulus) % modulus)) {
+            //plains,snowy tundra, taiga,desert,savanna,
+            std::cout << seedCopy << " village" << std::endl;
+            if (map[pos.x * 256 + pos.z] == 2 || map[pos.x * 256 + pos.z] == 5 || map[pos.x * 256 + pos.z] == 1 ||
+                map[pos.x * 256 + pos.z] == 30 || map[pos.x * 256 + pos.z] == 35) {
+                std::cout << seedCopy << " good" << std::endl;
+            }
+        }
+        if (seedCopy % 10 == 0) {
+            std::cout << seedCopy << " come" << std::endl;
+        }
+
+    }
+    free(map);
+    freeGenerator(g);
+}
 
 int main() {
-    //genDebug(132013311129977);
-    structureTest(-6981389975355808015);
-    genTestAgain(-6981389975355808015);
-    //genTestAgain(8453669988862261625);
+    std::vector<int64_t> seeds = {
+
+            54647519423172
+    };
+    for (auto el:seeds) {
+        //structureTest(el);
+        //genTestAgain(el);
+    }
+    //genTestAgain(2413139622859877060);
+
+    structureTest(54647519423172);
+
     return 0;
 }
-/*Final seed found : -6336310450994062231 3 254224716225641
-Final seed found : -5093598428816515991 3 254224716225641
-Final seed found : -5080650579887825815 3 254224716225641
-Final seed found : -3821613009061061527 3 254224716225641
-Final seed found : -1495785276500910999 3 254224716225641
-Final seed found : -732425139661611927 3 254224716225641
-Final seed found : -266021103252054935 3 254224716225641
-It took me 83.5724 seconds for the seed : 254224716225641*/
+

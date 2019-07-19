@@ -100,7 +100,7 @@ bool can_it_be_thereDEBUG(unsigned long long currentSeed, std::vector<Structure>
                 break;
             case 't': //treasures
                 if (r.nextFloat() < 0.01) {
-                    if (sum > 2) {
+                    if (sum > 3) {
                         printf("Good seed: %llu %d\n", currentSeed,sum);
                     }
                     if (sum == (int) arrayStruct.size() - 1) {
@@ -115,7 +115,7 @@ bool can_it_be_thereDEBUG(unsigned long long currentSeed, std::vector<Structure>
 
         if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k &&
             m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus) && el.typeStruct!='t') {
-            if (sum > 2) {
+            if (sum > 3) {
                 printf("Good seed: %llu %d\n", currentSeed,sum);
             }
             if (sum == (int) arrayStruct.size() - 1) {
@@ -141,7 +141,7 @@ void structure_seed_single(unsigned long *a, unsigned long n_iter, int thread_id
                 exit(0);
             }
             unsigned long long currentSeed = time_machine(i + a[thread_id], pillar_seed);
-            if (can_it_be_thereDEBUG(currentSeed, arrayStruct[thread_id])) {
+            if (can_it_be_thereDEBUG(currentSeed, arrayStruct[thread_id])) {//can_it_be_there(currentSeed,0,arrayStruct[thread_id])){//
                 printf("Partial seed found: %llu\n", currentSeed);
                 file << currentSeed << std::endl;
             }
