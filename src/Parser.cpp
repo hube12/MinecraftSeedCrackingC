@@ -58,19 +58,31 @@ Globals parse_file(const std::string& filename) {
     std::getline(options, field, ',');
     versions version_number = parse_version(field);
     std::getline(options, field, ',');
-    int number_of_processes = stoi(field);
-    if (number_of_processes < 2) {
-        number_of_processes = 1;
-    } else if (number_of_processes >= 8) {
-        number_of_processes = 8;
-    } else if (number_of_processes >= 4) {
-        number_of_processes = 4;
-    } else { number_of_processes = 2; }
+    bool gpu = false;
+    int number_of_processes = 0;
+    if (field==std::string("gpu")) {
+        #ifdef USE_CUDA
+            number_of_processes = 1;
+            gpu = true;
+        #else
+            throw std::runtime_error("Not compiled with CUDA support");
+        #endif
+    }
+    else {
+        number_of_processes = stoi(field);
+        if (number_of_processes < 2) {
+            number_of_processes = 1;
+        } else if (number_of_processes >= 8) {
+            number_of_processes = 8;
+        } else if (number_of_processes >= 4) {
+            number_of_processes = 4;
+        } else { number_of_processes = 2; }
+    }
     std::getline(options, field, ',');
     int biome_size = stoi(field);
     std::getline(options, field, ',');
     int river_size = stoi(field);
-    auto* options_obj=new Options(version_number, number_of_processes, biome_size, river_size);
+    auto* options_obj=new Options(version_number, gpu, number_of_processes, biome_size, river_size);
 
     //get the pillars array
     std::getline(datafile, line);

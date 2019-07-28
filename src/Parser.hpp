@@ -36,14 +36,16 @@ public:
 
 class Options {
 public:
-    explicit Options(versions version, int processes, int biome, int river) {
+    explicit Options(versions version, bool gpu, int processes, int biome, int river) {
         this->version = version;
+        this->gpu = gpu;
         this->processes = processes;
         this->biome = biome;
         this->river = river;
     }
 
     versions version;
+    bool gpu{};
     int processes{};
     int biome{};
     int river{};

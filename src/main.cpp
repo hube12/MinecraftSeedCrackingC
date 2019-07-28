@@ -2,6 +2,9 @@
 #include "PillarsCracker.hpp"
 #include "MultiprocessedCracker.hpp"
 #include "GenerationCracker.hpp"
+#ifdef USE_CUDA
+    #include "CudaCracker.hpp"
+#endif
 
 #include <fstream>
 #include <wait.h>
@@ -52,6 +55,13 @@ int main() {
     pid_t pidMain = fork();
     if (pidMain == 0) {
         setpgid(getpid(), getppid());
+        #ifdef USE_CUDA
+        if (global_data.option->gpu) {
+            cuda_handler(pillar_seed, global_data.structures_array);
+            // this calls exit, so no need for a else-case
+        }
+        #endif
+
         multiprocess_handler(pillar_seed, global_data.structures_array, global_data.option->processes, getppid(),
                              pipes);
     } else {
@@ -67,7 +77,7 @@ int main() {
         }
         int flag_pipe=0;
 
-        while (flag_pipe<8) {
+        while (flag_pipe<global_data.option->processes) {
             char progression[200];
             for (unsigned i = 0; i < pipes.size(); i++) {
                 if (!blocklist[i]) {
@@ -92,8 +102,17 @@ int main() {
 
         while (waitpid(0, &status, WCONTINUED) != -1) {}
 
-
-        std::vector<unsigned long long> partials_seeds = assemble_logs(global_data.option->processes);
+        std::vector<unsigned long long> partials_seeds;
+        #ifdef USE_CUDA
+            if (global_data.option->gpu) {
+                partials_seeds = cuda_assemble_logs();
+            }
+            else {
+        #endif
+                partials_seeds = assemble_logs(global_data.option->processes);
+        #ifdef USE_CUDA
+            }
+        #endif
 
         for (auto el:partials_seeds) {
             std::cout << "Potential seed " << el << std::endl;
