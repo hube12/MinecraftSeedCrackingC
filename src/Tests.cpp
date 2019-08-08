@@ -48,13 +48,14 @@ void test_structure() {
 }
 
 void test_time_machine() {
-    unsigned long long seed = 123;
+    unsigned long long seed = 155312483832948;
     unsigned long long currentSeed = seed ^(unsigned long long) 0x5DEECE66D;
     currentSeed = (currentSeed * 0x5deece66d + 0xb) & (unsigned long long) 0xffffffffffff;
     currentSeed = (currentSeed * 0x5deece66d + 0xb) & (unsigned long long) 0xffffffffffff;
     auto pillar = (unsigned int) ((currentSeed & 0xFFFF0000) >> 16u);
     unsigned long long iterated =
             ((currentSeed & (unsigned long long) 0xFFFF00000000) >> 16u) | (currentSeed & (unsigned long long) 0xFFFF);
+    std::cout << iterated << " " << pillar << std::endl;
     if (time_machine(iterated, pillar) == seed) {
         std::cout << "Bravo the time machine works" << std::endl;
     } else {
@@ -135,14 +136,14 @@ void genTestAgain(int64_t seed) {
 }
 
 void genDebug(int64_t partial) {
-    std::vector<unsigned long long> final_seeds;
     const Globals global_data = parse_file("data.txt");
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     initBiomes();
     LayerStack g = setupGenerator(global_data.option->version);
+    int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
     for (unsigned int i = 0; i < (1U << 16u); i++) {
-        applySeed(&g, (int64_t) (((unsigned long long) i) << 48u | partial));
-        int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
+        applySeed(&g, (int64_t) (((unsigned long long) i) << 48u | (uint64_t) partial));
+
         int sum = 0;
         for (Biomess el:global_data.biome) {
             Pos pos;
@@ -152,24 +153,89 @@ void genDebug(int64_t partial) {
             int biomeID = map[0];
             if (biomeID == el.id) {
                 sum++;
+            } else {
+                goto skip;
             }
 
         }
-        free(map);
-        if (sum > 3) {
-            unsigned long long seedf = ((((unsigned long long) i) << 48u) | partial);
+        skip:
+
+        if (sum > 2) {
+            unsigned long long seedf = ((((unsigned long long) i) << 48u) | (uint64_t) partial);
             std::cout << "Final seed found : " << (int64_t) seedf << " " << sum << " " << partial << std::endl;
 
-            final_seeds.push_back(seedf);
+            //final_seeds.push_back(seedf);
         }
+
 
     }
     std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
     std::cout << "It took me " << time_span.count() << " seconds for the seed : " << partial << std::endl;
     freeGenerator(g);
+    free(map);
+}
 
+void fast_struct(int64_t seed, int64_t offset_salt, Globals global_data) {
+    int sum = 0;
+    for (auto el:global_data.structures_array) {
+        bool flag = false;
+        auto r = Random(seed + el.incompleteRand + offset_salt);
+        long signed k = -1, m = -1;
+        //std::cout<<el.incompleteRand<<" "<<el.modulus<<std::endl;
+        switch (el.typeStruct) {
+            case 's': //old structures: igloo, witch hut, desert temple, jungle temple, village
+                k = r.nextInt(24);
+                m = r.nextInt(24);
+                break;
+            case 'e': //end cities
+                k = (r.nextInt(9) + r.nextInt(9)) / 2;
+                m = (r.nextInt(9) + r.nextInt(9)) / 2;
+                break;
+            case 'o': //ocean monuments
+                k = (r.nextInt(27) + r.nextInt(27)) / 2;
+                m = (r.nextInt(27) + r.nextInt(27)) / 2;
+                break;
+            case 'm': //mansions
+                k = (r.nextInt(60) + r.nextInt(60)) / 2;
+                m = (r.nextInt(60) + r.nextInt(60)) / 2;
+                break;
+            case 'r': //ruins
+                k = (r.nextInt(8) + r.nextInt(8)) / 2;
+                m = (r.nextInt(8) + r.nextInt(8)) / 2;
+                break;
+            case 'w': //shipwreck
+                k = r.nextInt(8);
+                m = r.nextInt(8);
+                break;
+            case 't': //treasures
+                if (r.nextFloat() < 0.01) {
+                    sum += 1;
+                    //std::cout << el.chunkX << el.typeStruct << std::endl;
+                    std::cout << "true ";
+                    flag = true;
+                }
+                break;
+            default:
+                std::cerr << "Wow that's a parser mistake pls enter in contact with your local helper: NEIL#4879"
+                          << std::endl;
+                break;
+        }
+        if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k &&
+            m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus) && el.typeStruct != 't') {
+            sum += 1;
+            //std::cout << el.chunkX << el.typeStruct << std::endl;
+            //std::cout << "true ";
+        } else {
+            if (!flag) {
+                //std::cout << "false ";
+            }
+        }
 
+    }
+    if (sum > 3) {
+        std::cout << sum << " " << offset_salt << std::endl;
+    }
 }
 
 void structureTest(int64_t seed) {
@@ -230,8 +296,9 @@ void structureTest(int64_t seed) {
         }
 
     }
+    std::cout << sum << " " << seed << std::endl;
 
-    std::cout << sum << std::endl;
+
 }
 
 
@@ -302,19 +369,103 @@ void testSpawnVillager() {
     freeGenerator(g);
 }
 
-int main() {
-    std::vector<int64_t> seeds = {
+void loadFileAndRun() {
 
-            54647519423172
-    };
-    for (auto el:seeds) {
-        //structureTest(el);
-        //genTestAgain(el);
+    std::string line;
+
+    std::ifstream datafile("out.txt", std::ios::in);
+    if (datafile.fail() || !datafile) {
+        printf("file was not loaded\n");
+        throw std::runtime_error("file was not loaded");
     }
-    //genTestAgain(2413139622859877060);
+    while (std::getline(datafile, line)) {
+        int64_t seed = stoll(line, nullptr, 16);
+        //std::cout<<seed<<std::endl;
+        structureTest(seed);
+    }
 
-    structureTest(54647519423172);
+}
 
+
+long loadFileAndTestRandom() {
+
+    std::string line;
+
+    std::ifstream datafile("out.txt", std::ios::in);
+    if (datafile.fail() || !datafile) {
+        printf("file was not loaded\n");
+        throw std::runtime_error("file was not loaded");
+    }
+    while (std::getline(datafile, line)) {
+        int count=0;
+        uint64_t seed = stoull(line, nullptr, 16);
+        //std::cout<<seed<<std::endl;
+        seed = (seed ^ 0x5deece66dLLU) & ((1LLU << 48u) - 1u);
+        int bound = 27;
+         seed=(seed * 0x5deece66dLLU + 0xBLU) & ((1LLU << 48u) - 1u); //next()
+        int bits = seed>>17u; //next(31)
+        int val=bits%bound;
+
+        while ((bits - val + bound - 1) < 0) {
+            seed=(seed * 0x5deece66dLLU + 0xBLU) & ((1LLU << 48u) - 1u); //next()
+            bits = seed>>17u; //next(31)
+            val = bits % bound;
+            count++;
+
+        }
+        if (count!=1) std::cout<<count<<" "<<stoull(line, nullptr, 16)<<std::endl;
+
+    }
+    std::cout<<"Test finished"<<std::endl;
+    return 1;
+}
+
+void testsalt() {
+
+    std::vector<int64_t> seeds = {281473781465834};
+
+    Globals globals = parse_file("data.txt");
+    for (auto el:seeds) {
+        for (long offset = -1394000000; offset < 10000000000LL; ++offset) {
+            if (!(offset % 1000000)) {
+                std::cout << "pos :" << offset << std::endl;
+            }
+            fast_struct(el, offset, globals);
+        }
+    }
+    loadFileAndRun();
+    genTestAgain((int64_t) 18446744072514306794LLU);
+}
+
+void testIfFromPillar() {
+    std::vector<uint64_t> seeds = {
+            56079611625520
+    };
+
+    Globals globals = parse_file("data.txt");
+    int64_t pillarSeed = find_pillar_seed(globals.pillars_array);
+    for (auto el:seeds) {
+        unsigned long long currentSeed = el ^(unsigned long long) 0x5DEECE66D;
+        currentSeed = (currentSeed * 0x5deece66d + 0xb) & (unsigned long long) 0xffffffffffff;
+        currentSeed = (currentSeed * 0x5deece66d + 0xb) & (unsigned long long) 0xffffffffffff;
+        auto pillar = (unsigned int) ((currentSeed & 0xFFFF0000) >> 16u);
+        if (pillar == pillarSeed) {
+            std::cout << el << std::endl;
+        }
+        std::cout << pillar << " " << pillarSeed << std::endl;
+    }
+
+}
+
+int main() {
+    //loadFileAndRun();
+    // testIfFromPillar();
+    loadFileAndTestRandom();
+    std::vector<int64_t> seeds = {};
+    for (auto el:seeds) {
+        structureTest(el);
+        genDebug(el);
+    }
     return 0;
 }
 

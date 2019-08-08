@@ -130,7 +130,7 @@ Globals parse_file(const std::string& filename) {
             case 'r': //ocean ruins
                 salt = 14357621;
                 break;
-            case 'm': //ocean ruins
+            case 'm': //mansion
                 salt = 10387319;
                 break;
             case 'h': //swamp hut

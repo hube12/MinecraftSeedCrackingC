@@ -8,8 +8,8 @@ private:
 public:
     explicit Random(unsigned long long seed) : seed((seed ^ (unsigned long long) 0x5deece66d) & ((1LLU << 48u) - 1)) {};
 
-    void setSeed(unsigned long long seed) {
-        this->seed = (seed ^ (unsigned long long) 0x5deece66d) & ((1LLU << 48u) - 1);
+    void setSeed(unsigned long long _seed) {
+        this->seed = (_seed ^ 0x5deece66dLLU) & ((1LLU << 48u) - 1u);
     }
 
     unsigned long long getSeed() {
@@ -25,11 +25,11 @@ public:
         return (long) (seed >> (48u - bits));
     }
 
-    long signed nextInt(long unsigned bound) {
+    long signed nextInt(long  bound) {
         if (bound <= 0) {
             std::cerr << "Invalid bound";
         }
-        if ((bound & (bound - 1)) == 0) {
+        if (((unsigned)bound & ((unsigned)bound - 1u)) == 0) {
             return (long signed) ((bound * (unsigned long long) next(31)) >> 31u);
         }
         long signed bits = next(31);
@@ -42,6 +42,6 @@ public:
     }
 
     float nextFloat() {
-        return next(24) / (float) (1LLU << 24u);
+        return (float)next(24) / (1LLU << 24u);
     }
 };
