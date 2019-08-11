@@ -47,14 +47,16 @@ void test_structure() {
     }
 }
 
-void test_time_machine() {
-    unsigned long long seed = 155312483832948;
+void test_time_machine(unsigned long long seed) {
     unsigned long long currentSeed = seed ^(unsigned long long) 0x5DEECE66D;
     currentSeed = (currentSeed * 0x5deece66d + 0xb) & (unsigned long long) 0xffffffffffff;
     currentSeed = (currentSeed * 0x5deece66d + 0xb) & (unsigned long long) 0xffffffffffff;
     auto pillar = (unsigned int) ((currentSeed & 0xFFFF0000) >> 16u);
     unsigned long long iterated =
             ((currentSeed & (unsigned long long) 0xFFFF00000000) >> 16u) | (currentSeed & (unsigned long long) 0xFFFF);
+    std::cout << iterated << " " << pillar << std::endl;
+    Globals globals=parse_file("data.txt");
+    pillar=find_pillar_seed(globals.pillars_array);
     std::cout << iterated << " " << pillar << std::endl;
     if (time_machine(iterated, pillar) == seed) {
         std::cout << "Bravo the time machine works" << std::endl;
@@ -140,7 +142,9 @@ void genDebug(int64_t partial) {
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     initBiomes();
     LayerStack g = setupGenerator(global_data.option->version);
+
     int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
+
     for (unsigned int i = 0; i < (1U << 16u); i++) {
         applySeed(&g, (int64_t) (((unsigned long long) i) << 48u | (uint64_t) partial));
 
@@ -150,12 +154,11 @@ void genDebug(int64_t partial) {
             pos.x = el.cx;
             pos.z = el.cz;
             genArea(&g.layers[g.layerNum - 1], map, pos.x, pos.z, 1, 1);
+
             int biomeID = map[0];
-            if (biomeID == el.id) {
-                sum++;
-            } else {
-                goto skip;
-            }
+            if (biomeID == el.id)sum++;
+            else goto skip;
+
 
         }
         skip:
@@ -318,7 +321,7 @@ void tests() {
     return;
     test_data("data_example.txt");
     printf("----------\n");
-    test_time_machine();
+    test_time_machine(123);
     printf("----------\n");
     test_pillars();
     printf("----------\n");
@@ -399,7 +402,7 @@ long loadFileAndTestRandom() {
     while (std::getline(datafile, line)) {
         int count=0;
         uint64_t seed = stoull(line, nullptr, 16);
-        //std::cout<<seed<<std::endl;
+        std::cout<<seed<<std::endl;
         seed = (seed ^ 0x5deece66dLLU) & ((1LLU << 48u) - 1u);
         int bound = 27;
          seed=(seed * 0x5deece66dLLU + 0xBLU) & ((1LLU << 48u) - 1u); //next()
@@ -460,12 +463,17 @@ void testIfFromPillar() {
 int main() {
     //loadFileAndRun();
     // testIfFromPillar();
-    loadFileAndTestRandom();
-    std::vector<int64_t> seeds = {};
+   // loadFileAndRun();
+    std::vector<int64_t> seeds = {
+            -3604707447256574958
+
+    };
     for (auto el:seeds) {
-        structureTest(el);
-        genDebug(el);
+       structureTest(el);
+
+       genTestAgain(el);
     }
+   // test_time_machine(-3604707447256574958);
     return 0;
 }
 

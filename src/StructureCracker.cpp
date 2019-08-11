@@ -115,7 +115,7 @@ bool can_it_be_thereDEBUG(unsigned long long currentSeed, std::vector<Structure>
 
         if ((((el.chunkX % el.modulus) + el.modulus) % el.modulus) == k &&
             m == (((el.chunkZ % el.modulus) + el.modulus) % el.modulus) && el.typeStruct!='t') {
-            if (sum > 3) {
+            if (sum > 2) {
                 printf("Good seed: %llu %d\n", currentSeed,sum);
             }
             if (sum == (int) arrayStruct.size() - 1) {

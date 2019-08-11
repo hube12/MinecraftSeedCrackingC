@@ -676,7 +676,6 @@ void mapDeepOcean(Layer *l, int *__restrict out, long long areaX, long long area
     int pWidth = areaWidth + 2;
     int pHeight = areaHeight + 2;
     int x, z;
-
     l->p->getMap(l->p, out, pX, pZ, pWidth, pHeight);
 
     for (z = 0; z < areaHeight; z++) {
@@ -983,7 +982,6 @@ void mapHills113(Layer *l, int *__restrict out, long long areaX, long long areaZ
         printf("mapHills() requires two parents! Use setupMultiLayer()\n");
         exit(1);
     }
-
     buf = (int *) malloc(pWidth * pHeight * sizeof(int));
 
     l->p->getMap(l->p, out, pX, pZ, pWidth, pHeight);
@@ -1103,7 +1101,6 @@ void mapRiver(Layer *l, int *__restrict out, long long areaX, long long areaZ, i
     int x, z;
 
     l->p->getMap(l->p, out, pX, pZ, pWidth, pHeight);
-
     for (z = 0; z < areaHeight; z++) {
         for (x = 0; x < areaWidth; x++) {
             int v01 = reduceID(out[x + 0 + (z + 1) * pWidth]);
@@ -1486,6 +1483,7 @@ void mapOceanMix(Layer *l, int *__restrict out, long long areaX, long long areaZ
 
 
 void mapVoronoiZoom(Layer *l, int *__restrict out, long long areaX, long long areaZ, int areaWidth, int areaHeight) {
+
     areaX -= 2;
     areaZ -= 2;
     int pX = (int) areaX >> 2;
