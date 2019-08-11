@@ -116,8 +116,9 @@ LayerStack setupGeneratorMC113()
 
     LayerStack g;
 
-    g.layerNum = 52;
+    g.layerNum = 54;
     g.layers = (Layer *) malloc(sizeof(Layer) * g.layerNum);
+
 
     //         SCALE    LAYER          PARENT      SEED  LAYER_FUNCTION
     setupLayer(4096, &g.layers[ 0], nullptr,    1, mapIsland);
@@ -159,33 +160,35 @@ LayerStack setupGeneratorMC113()
     setupLayer(  16, &g.layers[30], &g.layers[29], 1000, mapShore);
     setupLayer(   8, &g.layers[31], &g.layers[30], 1002, mapZoom);
     setupLayer(   4, &g.layers[32], &g.layers[31], 1003, mapZoom);
-    setupLayer(   4, &g.layers[33], &g.layers[32], 1000, mapSmooth);
+    setupLayer(   2, &g.layers[33], &g.layers[32], 1004, mapZoom);
+    setupLayer(   1, &g.layers[34], &g.layers[33], 1005, mapZoom);
+    setupLayer(   0, &g.layers[35], &g.layers[34], 1000, mapSmooth);
 
     // river layer chain
-    setupLayer( 128, &g.layers[34], &g.layers[22], 1000, mapZoom);
-    setupLayer(  64, &g.layers[35], &g.layers[34], 1001, mapZoom);
-    setupLayer(  32, &g.layers[36], &g.layers[35], 1000, mapZoom);
-    setupLayer(  16, &g.layers[37], &g.layers[36], 1001, mapZoom);
-    setupLayer(   8, &g.layers[38], &g.layers[37], 1002, mapZoom);
-    setupLayer(   4, &g.layers[39], &g.layers[38], 1003, mapZoom);
-    setupLayer(   4, &g.layers[40], &g.layers[39],    1, mapRiver);
-    setupLayer(   4, &g.layers[41], &g.layers[40], 1000, mapSmooth);
+    setupLayer( 128, &g.layers[36], &g.layers[22], 1000, mapZoom);
+    setupLayer(  64, &g.layers[37], &g.layers[36], 1001, mapZoom);
+    setupLayer(  32, &g.layers[38], &g.layers[37], 1000, mapZoom);
+    setupLayer(  16, &g.layers[39], &g.layers[38], 1001, mapZoom);
+    setupLayer(   8, &g.layers[40], &g.layers[39], 1002, mapZoom);
+    setupLayer(   4, &g.layers[41], &g.layers[40], 1003, mapZoom);
+    setupLayer(   4, &g.layers[42], &g.layers[41],    1, mapRiver);
+    setupLayer(   4, &g.layers[43], &g.layers[42], 1000, mapSmooth);
 
-    setupMultiLayer(4, &g.layers[42], &g.layers[33], &g.layers[41], 100, mapRiverMix);
+    setupMultiLayer(4, &g.layers[44], &g.layers[35], &g.layers[43], 100, mapRiverMix);
 
     // ocean variants
-    setupLayer( 256, &g.layers[43], nullptr,    2, mapOceanTemp);
-    g.layers[43].oceanRnd = (OceanRnd *) malloc(sizeof(OceanRnd));
-    setupLayer( 128, &g.layers[44], &g.layers[43], 2001, mapZoom);
-    setupLayer(  64, &g.layers[45], &g.layers[44], 2002, mapZoom);
-    setupLayer(  32, &g.layers[46], &g.layers[45], 2003, mapZoom);
-    setupLayer(  16, &g.layers[47], &g.layers[46], 2004, mapZoom);
-    setupLayer(   8, &g.layers[48], &g.layers[47], 2005, mapZoom);
-    setupLayer(   4, &g.layers[49], &g.layers[48], 2006, mapZoom);
+    setupLayer( 256, &g.layers[45], nullptr,    2, mapOceanTemp);
+    g.layers[45].oceanRnd = (OceanRnd *) malloc(sizeof(OceanRnd));
+    setupLayer( 128, &g.layers[46], &g.layers[45], 2001, mapZoom);
+    setupLayer(  64, &g.layers[47], &g.layers[46], 2002, mapZoom);
+    setupLayer(  32, &g.layers[48], &g.layers[47], 2003, mapZoom);
+    setupLayer(  16, &g.layers[49], &g.layers[48], 2004, mapZoom);
+    setupLayer(   8, &g.layers[50], &g.layers[49], 2005, mapZoom);
+    setupLayer(   4, &g.layers[51], &g.layers[50], 2006, mapZoom);
 
-    setupMultiLayer(4, &g.layers[50], &g.layers[42], &g.layers[49], 100, mapOceanMix);
+    setupMultiLayer(4, &g.layers[52], &g.layers[44], &g.layers[51], 100, mapOceanMix);
 
-    setupLayer(1, &g.layers[51], &g.layers[50],   10, mapVoronoiZoom);
+    setupLayer(1, &g.layers[53], &g.layers[52],   10, mapVoronoiZoom);
 
     return g;
 }
