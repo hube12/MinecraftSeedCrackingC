@@ -1,5 +1,19 @@
 To download the tool go in release: https://github.com/hube12/MinecraftSeedCrackingC/releases/download/2.0/SeedCracking.zip 
 
+I WILL NOT PROVIDE ANY HELP VIA DISCORD ANYMORE (NOR ANY OTHER MEDIUM), ASSUME THAT YOU MADE A MISTAKE WHILE GATHERING THE DATA, COMMON ISSUES ARE:
+- taking Chunk cooordinates for both structures and biomes
+- taking biomes cooridinates for both structures and biomes
+- using XYZ instead of the line looking at block (or the newly block:) while looking down for biomes.
+- taking the wrong chunk for ocean monument (its the south east of the 4 center chunk for 1.13+)
+- using villages in 1.14+, the center isn't the well anymorz
+- taking the wrong end city chunk, its more than 60% of the ground block in the chunk
+- NOT READING THE README.TXT GIVEN IN THE RELEASE
+- not checking the biomes id with the wiki to see if you filled up correctly the data.txt (aka new names from 1.13 old/new menu)
+- running this release on a modified server aka paper/spigot with different world generation, end seed different from overworld or changed salt (there is a gpu version if needed on my github)
+- using this tool on a changed seed on non vanilla server (aka end seed will be different from overworld one)
+- modifying the data.txt with notepad from windows and not using notepad++ (screw line endings)
+- Being generally not cautious with the data gathering.
+
 
 
 Hello,
