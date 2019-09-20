@@ -13,7 +13,7 @@ I WILL NOT PROVIDE ANY HELP VIA DISCORD ANYMORE (NOR ANY OTHER MEDIUM), ASSUME T
 - using this tool on a changed seed on non vanilla server (aka end seed will be different from overworld one)
 - modifying the data.txt with notepad from windows and not using notepad++ (screw line endings)
 - Being generally not cautious with the data gathering.
-
+- Using Shipwrecks (the compiled file has a bug) and Ocean ruins (those are notoriously hard to get right)
 
 
 Hello,
