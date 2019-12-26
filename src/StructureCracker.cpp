@@ -67,7 +67,7 @@ bool can_it_be_there(unsigned long long currentSeed, int index, std::vector<Stru
 
 
 
-bool can_it_be_thereDEBUG(unsigned long long currentSeed, std::vector<Structure> arrayStruct) {
+bool can_it_be_thereDEBUG(unsigned long long currentSeed, const std::vector<Structure>& arrayStruct) {
     int sum=0;
     for (Structure el:arrayStruct){
         auto r = Random(currentSeed + el.incompleteRand);
@@ -91,16 +91,20 @@ bool can_it_be_thereDEBUG(unsigned long long currentSeed, std::vector<Structure>
                 m = (r.nextInt(60) + r.nextInt(60)) / 2;
                 break;
             case 'r': //ruins
-                k = (r.nextInt(8) + r.nextInt(8)) / 2;
-                m = (r.nextInt(8) + r.nextInt(8)) / 2;
+                k = r.nextInt(8);
+                m = r.nextInt(8);
                 break;
             case 'w': //shipwreck
-                k = r.nextInt(8) ;
+                k = r.nextInt(8);
                 m = r.nextInt(8);
+                break;
+            case 'p': //pillager outpost
+                k = r.nextInt(24);
+                m = r.nextInt(24);
                 break;
             case 't': //treasures
                 if (r.nextFloat() < 0.01) {
-                    if (sum > 3) {
+                    if (sum > 2) {
                         printf("Good seed: %llu %d\n", currentSeed,sum);
                     }
                     if (sum == (int) arrayStruct.size() - 1) {

@@ -55,8 +55,8 @@ void test_time_machine(unsigned long long seed) {
     unsigned long long iterated =
             ((currentSeed & (unsigned long long) 0xFFFF00000000) >> 16u) | (currentSeed & (unsigned long long) 0xFFFF);
     std::cout << iterated << " " << pillar << std::endl;
-    Globals globals=parse_file("data.txt");
-    pillar=find_pillar_seed(globals.pillars_array);
+    Globals globals = parse_file("data.txt");
+    pillar = find_pillar_seed(globals.pillars_array);
     std::cout << iterated << " " << pillar << std::endl;
     if (time_machine(iterated, pillar) == seed) {
         std::cout << "Bravo the time machine works" << std::endl;
@@ -236,7 +236,15 @@ void fast_struct(int64_t seed, int64_t offset_salt, Globals global_data) {
         }
 
     }
-    if (sum > 3) {
+    if (sum == (int) global_data.structures_array.size() ) {
+        std::cout<<"Salt found :"<<offset_salt<<std::endl;
+        FILE *fp = fopen("Save.txt", "a+");
+        fprintf(fp, "%" PRId64"\n", offset_salt);
+        fflush(fp);
+        fclose(fp);
+        return;
+    }
+    if (sum > 4) {
         std::cout << sum << " " << offset_salt << std::endl;
     }
 }
@@ -382,7 +390,7 @@ void loadFileAndRun() {
         throw std::runtime_error("file was not loaded");
     }
     while (std::getline(datafile, line)) {
-        int64_t seed = stoll(line, nullptr, 16);
+        int64_t seed = stoll(line, nullptr, 10);
         //std::cout<<seed<<std::endl;
         structureTest(seed);
     }
@@ -400,44 +408,43 @@ long loadFileAndTestRandom() {
         throw std::runtime_error("file was not loaded");
     }
     while (std::getline(datafile, line)) {
-        int count=0;
+        int count = 0;
         uint64_t seed = stoull(line, nullptr, 16);
-        std::cout<<seed<<std::endl;
+        std::cout << seed << std::endl;
         seed = (seed ^ 0x5deece66dLLU) & ((1LLU << 48u) - 1u);
         int bound = 27;
-         seed=(seed * 0x5deece66dLLU + 0xBLU) & ((1LLU << 48u) - 1u); //next()
-        int bits = seed>>17u; //next(31)
-        int val=bits%bound;
+        seed = (seed * 0x5deece66dLLU + 0xBLU) & ((1LLU << 48u) - 1u); //next()
+        int bits = seed >> 17u; //next(31)
+        int val = bits % bound;
 
         while ((bits - val + bound - 1) < 0) {
-            seed=(seed * 0x5deece66dLLU + 0xBLU) & ((1LLU << 48u) - 1u); //next()
-            bits = seed>>17u; //next(31)
+            seed = (seed * 0x5deece66dLLU + 0xBLU) & ((1LLU << 48u) - 1u); //next()
+            bits = seed >> 17u; //next(31)
             val = bits % bound;
             count++;
 
         }
-        if (count!=1) std::cout<<count<<" "<<stoull(line, nullptr, 16)<<std::endl;
+        if (count != 1) std::cout << count << " " << stoull(line, nullptr, 16) << std::endl;
 
     }
-    std::cout<<"Test finished"<<std::endl;
+    std::cout << "Test finished" << std::endl;
     return 1;
 }
 
-void testsalt() {
+void testsalt(int64_t seed,int low,int high) {
 
-    std::vector<int64_t> seeds = {281473781465834};
+    std::vector<int64_t> seeds = {seed};
 
     Globals globals = parse_file("data.txt");
     for (auto el:seeds) {
-        for (long offset = -1394000000; offset < 10000000000LL; ++offset) {
-            if (!(offset % 1000000)) {
+        for (long long offset = low*10000000; offset < high*10000000; ++offset) {
+            if (!(offset % 10000000)) {
                 std::cout << "pos :" << offset << std::endl;
             }
             fast_struct(el, offset, globals);
         }
     }
-    loadFileAndRun();
-    genTestAgain((int64_t) 18446744072514306794LLU);
+
 }
 
 void testIfFromPillar() {
@@ -460,20 +467,73 @@ void testIfFromPillar() {
 
 }
 
-int main() {
+void testGPU() {
+    Globals global_data = parse_file("data.txt");
+    for (unsigned long i = 0; i < (1LU << 28u); i++) {
+        int64_t seed = ((i >> 4u) << 24u) | (818243u << 4u) | (i & 0xFu);
+        for (auto el:global_data.structures_array) {
+            auto r = Random(seed + el.incompleteRand);
+            if (r.nextFloat() >= 0.01) goto skip;
+        }
+        std::cout << std::hex << seed << std::endl;
+        skip:;
+    }
+}
+std::vector<int64_t >giveIncompleteRand(const int chunkX[], const int chunkZ[],const int modulus[],const long salt[],int lenght){
+    std::vector<int64_t > incompleteRands;
+    for (int i = 0; i < lenght; ++i) {
+        incompleteRands[i]= (chunkX[i] < 0 ? chunkX[i] - (modulus[i] - 1): chunkX[i]) / modulus[i] * 341873128712LL +
+                    (chunkZ[i] < 0  ? chunkZ[i] - (modulus[i] - 1): chunkZ[i]) / modulus[i] * 132897987541LL + salt[i];
+    }
+}
+
+void testLattices(int64_t seed){
+    int chunkX[]={13,16};
+    int chunkZ[]={2,240};
+    int modulus[]={24,24};
+    long salts[]={14357617,14357617};
+    std::vector<int64_t > incompleteRands=giveIncompleteRand(chunkX,chunkZ,modulus,salts,2);
+    int k[]={-1,-1};
+
+}
+
+int main(int argc, char * argv[]) {
+   //testLattices(-1311638511);
     //loadFileAndRun();
     // testIfFromPillar();
-   // loadFileAndRun();
+    //loadFileAndRun();
+    //testGPU();
     std::vector<int64_t> seeds = {
-            -3604707447256574958
-
-    };
+            123615880050902
+            ,123122638248741
+            ,134932937071661
+            ,238459270631635
+            ,223825575266712
+            ,18415718269892
+            ,7560599500959
+            ,161547766966324
+            ,213340101588263
+            ,4529520218342
+            ,129316809393135
+            ,179601400913998
+            ,280860707241382
+            ,129667387361583
+            ,213633919082105
+            ,73489884551509
+            ,35583649923869
+            ,226728934589888
+            ,82957923192506
+            ,53431070126316
+            ,92287722552710
+            ,7468735482485
+            ,162800331790722
+             };
     for (auto el:seeds) {
-       structureTest(el);
+        structureTest(el);
 
-       genTestAgain(el);
+        //genTestAgain(el);
     }
-   // test_time_machine(-3604707447256574958);
+    // test_time_machine(-3604707447256574958);
     return 0;
 }
 

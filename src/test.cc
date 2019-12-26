@@ -2,8 +2,8 @@
 #include <iostream>
 #include "Parser.hpp"
 void structureTest() {
-    const Globals global_data = parse_file("data3.txt");
-    int64_t seed = ((uint64_t )-3858214617010580473 & 0xFFFFFFFFFFFFULL);
+    const Globals global_data = parse_file("data.txt");
+    int64_t seed = ((uint64_t )240268711024800 & 0xFFFFFFFFFFFFULL);
     int sum = 0;
     for (auto el:global_data.structures_array) {
         auto r = Random(seed + el.incompleteRand);
