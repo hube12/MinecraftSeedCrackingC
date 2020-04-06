@@ -110,7 +110,7 @@ Globals parse_file(const std::string& filename) {
                 salt = 14357617;
                 typeStruct = 's';
                 break;
-            case 'e': //end city
+            case 'e': //end cityp
                 salt = 10387313;
                 break;
             case 'j': //jungle temple
@@ -136,6 +136,9 @@ Globals parse_file(const std::string& filename) {
             case 'h': //swamp hut
                 salt = 14357620;
                 typeStruct = 's';
+                break;
+            case 'p':
+                salt=165745296;
                 break;
             default:
                 typeStruct='s';

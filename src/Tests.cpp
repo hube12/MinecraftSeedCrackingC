@@ -16,6 +16,25 @@
 #include "MultiprocessedCracker.hpp"
 
 #include <fstream>
+#include <mutex>
+
+#define PROCESSES 8
+#define STRIDE 100000000
+#define STRIDE_LOW 10
+
+void signalHandler(int signum) {
+    std::cout << "received SIGTERM " << signum << " on group pid : " << getgid() << std::endl;
+    kill(-getgid(), SIGKILL);
+}
+
+std::mutex mu;
+
+void shared_cout(int64_t seed) {
+    mu.lock();
+    std::cout << "seed hit: " << seed << std::endl;
+    mu.unlock();
+}
+
 
 void test_data(const std::string &filename) {
     const Globals global_data = parse_file(filename);
@@ -133,7 +152,7 @@ void genTestAgain(int64_t seed) {
         sum++;
     }
     free(map);
-    std::cout << std::endl;
+    std::cout << seed << std::endl;
 
 }
 
@@ -142,7 +161,6 @@ void genDebug(int64_t partial) {
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
     initBiomes();
     LayerStack g = setupGenerator(global_data.option->version);
-
     int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
 
     for (unsigned int i = 0; i < (1U << 16u); i++) {
@@ -157,14 +175,13 @@ void genDebug(int64_t partial) {
 
             int biomeID = map[0];
             if (biomeID == el.id)sum++;
-            else goto skip;
-
-
+            //else goto skip;
         }
         skip:
 
-        if (sum > 2) {
+        if (sum > 1) {
             unsigned long long seedf = ((((unsigned long long) i) << 48u) | (uint64_t) partial);
+            //shared_cout(seedf);
             std::cout << "Final seed found : " << (int64_t) seedf << " " << sum << " " << partial << std::endl;
 
             //final_seeds.push_back(seedf);
@@ -177,6 +194,28 @@ void genDebug(int64_t partial) {
     std::cout << "It took me " << time_span.count() << " seconds for the seed : " << partial << std::endl;
     freeGenerator(g);
     free(map);
+}
+
+
+void fastgen(int64_t partial, const Globals &global_data, LayerStack g, int *map) {
+    for (unsigned int i = 0; i < (1U << 16u); i++) {
+        applySeed(&g, (int64_t) (((unsigned long long) i) << 48u | (uint64_t) partial));
+        int sum = 0;
+        for (Biomess el:global_data.biome) {
+            Pos pos;
+            pos.x = el.cx;
+            pos.z = el.cz;
+            genArea(&g.layers[g.layerNum - 1], map, pos.x, pos.z, 1, 1);
+            int biomeID = map[0];
+            if (biomeID == el.id)sum++;
+            else goto skip;
+        }
+        skip:
+        if (sum > 2) {
+            unsigned long long seedf = ((((unsigned long long) i) << 48u) | (uint64_t) partial);
+            shared_cout(seedf);
+        }
+    }
 }
 
 void fast_struct(int64_t seed, int64_t offset_salt, Globals global_data) {
@@ -211,6 +250,10 @@ void fast_struct(int64_t seed, int64_t offset_salt, Globals global_data) {
                 k = r.nextInt(8);
                 m = r.nextInt(8);
                 break;
+            case 'p': //pillager outpost
+                k = r.nextInt(24);
+                m = r.nextInt(24);
+                break;
             case 't': //treasures
                 if (r.nextFloat() < 0.01) {
                     sum += 1;
@@ -236,8 +279,8 @@ void fast_struct(int64_t seed, int64_t offset_salt, Globals global_data) {
         }
 
     }
-    if (sum == (int) global_data.structures_array.size() ) {
-        std::cout<<"Salt found :"<<offset_salt<<std::endl;
+    if (sum == (int) global_data.structures_array.size()) {
+        std::cout << "Salt found :" << offset_salt << std::endl;
         FILE *fp = fopen("Save.txt", "a+");
         fprintf(fp, "%" PRId64"\n", offset_salt);
         fflush(fp);
@@ -281,6 +324,10 @@ void structureTest(int64_t seed) {
             case 'w': //shipwreck
                 k = r.nextInt(8);
                 m = r.nextInt(8);
+                break;
+            case 'p': //pillager outpost
+                k = r.nextInt(24);
+                m = r.nextInt(24);
                 break;
             case 't': //treasures
                 if (r.nextFloat() < 0.01) {
@@ -390,7 +437,7 @@ void loadFileAndRun() {
         throw std::runtime_error("file was not loaded");
     }
     while (std::getline(datafile, line)) {
-        int64_t seed = stoll(line, nullptr, 10);
+        int64_t seed = stoll(line, nullptr, 16);
         //std::cout<<seed<<std::endl;
         structureTest(seed);
     }
@@ -431,18 +478,34 @@ long loadFileAndTestRandom() {
     return 1;
 }
 
-void testsalt(int64_t seed,int low,int high) {
-
+void testsalt(int64_t seed, int low, int high) {
     std::vector<int64_t> seeds = {seed};
-
     Globals globals = parse_file("data.txt");
     for (auto el:seeds) {
-        for (long long offset = low*10000000; offset < high*10000000; ++offset) {
+        for (long long offset = low * 10000000; offset < high * 10000000; ++offset) {
             if (!(offset % 10000000)) {
                 std::cout << "pos :" << offset << std::endl;
             }
             fast_struct(el, offset, globals);
         }
+    }
+}
+
+
+void testsaltGen(int64_t seed, int id) {
+    Globals globals = parse_file("data.txt");
+    initBiomes();
+    LayerStack g = setupGenerator(globals.option->version);
+    int *map = allocCache(&g.layers[g.layerNum - 1], 1, 1);
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+    for (long long offset = id * STRIDE; offset < (id + 1) * STRIDE; ++offset) {
+        if (!(offset % STRIDE_LOW)) {
+            std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+            std::cout << "progress :" << (offset-id * STRIDE)/STRIDE <<" time:"<<time_span.count()<<" speed:"<<STRIDE_LOW*65535/time_span.count() <<std::endl;
+        }
+        fastgen(seed+offset,globals,g,map);
     }
 
 }
@@ -479,58 +542,88 @@ void testGPU() {
         skip:;
     }
 }
-std::vector<int64_t >giveIncompleteRand(const int chunkX[], const int chunkZ[],const int modulus[],const long salt[],int lenght){
-    std::vector<int64_t > incompleteRands;
+
+std::vector<int64_t>
+giveIncompleteRand(const int chunkX[], const int chunkZ[], const int modulus[], const long salt[], int lenght) {
+    std::vector<int64_t> incompleteRands;
     for (int i = 0; i < lenght; ++i) {
-        incompleteRands[i]= (chunkX[i] < 0 ? chunkX[i] - (modulus[i] - 1): chunkX[i]) / modulus[i] * 341873128712LL +
-                    (chunkZ[i] < 0  ? chunkZ[i] - (modulus[i] - 1): chunkZ[i]) / modulus[i] * 132897987541LL + salt[i];
+        incompleteRands[i] = (chunkX[i] < 0 ? chunkX[i] - (modulus[i] - 1) : chunkX[i]) / modulus[i] * 341873128712LL +
+                             (chunkZ[i] < 0 ? chunkZ[i] - (modulus[i] - 1) : chunkZ[i]) / modulus[i] * 132897987541LL +
+                             salt[i];
     }
 }
 
-void testLattices(int64_t seed){
-    int chunkX[]={13,16};
-    int chunkZ[]={2,240};
-    int modulus[]={24,24};
-    long salts[]={14357617,14357617};
-    std::vector<int64_t > incompleteRands=giveIncompleteRand(chunkX,chunkZ,modulus,salts,2);
-    int k[]={-1,-1};
+void testLattices(int64_t seed) {
+    int chunkX[] = {13, 16};
+    int chunkZ[] = {2, 240};
+    int modulus[] = {24, 24};
+    long salts[] = {14357617, 14357617};
+    std::vector<int64_t> incompleteRands = giveIncompleteRand(chunkX, chunkZ, modulus, salts, 2);
+    int k[] = {-1, -1};
 
 }
 
-int main(int argc, char * argv[]) {
-   //testLattices(-1311638511);
+
+void handler(int processes, pid_t pidMain, int64_t seed) {
+    std::vector<pid_t> pids;
+    switch (processes) {
+        case 2: {
+            pid_t pid1 = fork();
+            pids.push_back(pid1);
+            break;
+        }
+        case 4: {
+            pid_t pid1 = fork();
+            pid_t pid2 = fork();
+            pids.push_back(pid1);
+            pids.push_back(pid2);
+            break;
+        }
+        case 8: {
+            pid_t pid1 = fork();
+            pid_t pid2 = fork();
+            pid_t pid3 = fork();
+            pids.push_back(pid1);
+            pids.push_back(pid2);
+            pids.push_back(pid3);
+            break;
+        }
+        default: {
+            processes = 1;
+        }
+    }
+    setpgid(getpid(), pidMain);
+    testsaltGen(seed, return_id(pids)-PROCESSES/2);
+
+}
+
+void testGen() {
+    pid_t pidMain = fork();
+    if (pidMain == 0) {
+        handler(PROCESSES, getppid(), 202308808827716);
+    } else {
+        setpgid(getpid(), getpid());
+        signal(SIGTERM, signalHandler);
+        while (waitpid(0, nullptr, WCONTINUED) != -1) {}
+    }
+    mu.lock();
+    std::cout << "Done." << std::endl;
+    mu.unlock();
+}
+
+
+int main(int argc, char *argv[]) {
+    //testLattices(-1311638511);
     //loadFileAndRun();
     // testIfFromPillar();
     //loadFileAndRun();
     //testGPU();
+    testGen();
     std::vector<int64_t> seeds = {
-            123615880050902
-            ,123122638248741
-            ,134932937071661
-            ,238459270631635
-            ,223825575266712
-            ,18415718269892
-            ,7560599500959
-            ,161547766966324
-            ,213340101588263
-            ,4529520218342
-            ,129316809393135
-            ,179601400913998
-            ,280860707241382
-            ,129667387361583
-            ,213633919082105
-            ,73489884551509
-            ,35583649923869
-            ,226728934589888
-            ,82957923192506
-            ,53431070126316
-            ,92287722552710
-            ,7468735482485
-            ,162800331790722
-             };
+            91429933114180, 202308808827716
+    };
     for (auto el:seeds) {
-        structureTest(el);
-
+        //  structureTest(el);
         //genTestAgain(el);
     }
     // test_time_machine(-3604707447256574958);
